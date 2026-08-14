@@ -1,6 +1,12 @@
-# DeepSeek Harness
+# ⚠️ Unofficial DeepSeek Harness Desktop Wrapper
 
 English | [中文](README.zh.md)
+
+> **This fork is not an official DeepSeek release.** It preserves the official DeepSeek Harness Web UI and agent runtime, then adds an Electron application shell and native installers. DeepSeek AI does not publish or support the installers in this repository.
+
+Download the unsigned desktop builds from this fork's [GitHub Releases](https://github.com/tppc-linksc/deepseek-harness-NEXA/releases). See the [desktop release notes](apps/desktop/RELEASE_README.md) before installing.
+
+## Upstream project
 
 DeepSeek Harness (`dsh`) is an open-source agent harness developed by [DeepSeek AI](https://deepseek.com).
 
@@ -27,12 +33,20 @@ The command starts the Web UI, served at `http://127.0.0.1:3080` by default. See
 To run from a repository checkout:
 
 ```sh
-git clone https://github.com/deepseek-ai/deepseek-harness.git
+git clone https://github.com/tppc-linksc/deepseek-harness-NEXA.git
 cd deepseek-harness
 pnpm install
 pnpm run build
 pnpm dsh web
 ```
+
+The same Web UI can run as the portless desktop application:
+
+```sh
+pnpm run start:desktop
+```
+
+The desktop surface keeps its sessions, settings, credentials, plugins, agent configuration, Chromium state, and logs under its Electron application-data directory; it does not reuse the running Web profile's Harness home or open an HTTP listening port.
 
 ## Community and support
 

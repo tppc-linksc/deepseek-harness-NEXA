@@ -5,6 +5,9 @@ import type { RpcResult } from '@deepseek-ai/dsh-host-apiproxy/api'
 /** Trust fence applied before a Host RPC channel reaches its handler. */
 export type ConnectionRpcAuthority = 'trusted-host' | 'loopback'
 
+/** Authority assigned to one request by its physical transport adapter. */
+export type ConnectionRequestAuthority = ConnectionRpcAuthority
+
 /** Registration policy for one logical RPC channel. */
 export interface ConnectionRpcHandlerOptions {
   /** Browser authority accepted by every endpoint in this channel. */
@@ -56,6 +59,19 @@ export interface HostConnectionRpc {
 export interface HostConnectionHandle {
   /** Generic RPC channel registry. */
   readonly rpc: HostConnectionRpc
+  /**
+   * Dispatch a transport-produced Fetch request.
+   * @param request - request whose URL contains the logical channel path.
+   * @param authority - authority established by the physical transport.
+   * @returns the complete or streaming response from the owning API channel.
+   */
+  dispatch(request: Request, authority: ConnectionRequestAuthority): Promise<Response>
+  /**
+   * Observe dedicated channel registration for a physical route adapter.
+   * @param mount - mounts one channel path and returns its synchronous disposer.
+   * @returns disposer that removes every route mounted by this observer.
+   */
+  observeRpcChannels(mount: (channel: string) => () => void): () => void
 }
 
 /** Client caller for logical RPC channels carried by the current transport. */

@@ -10,7 +10,15 @@ import type { ApiProxy } from '@deepseek-ai/dsh-host-apiproxy/api'
 import type { AttachmentStore } from '@deepseek-ai/dsh-attachment'
 import { RpcId, type ClientRequest } from '@deepseek-ai/dsh-host-apiproxy/api'
 import type { WebServer, WebRoute, WebUpgradeRoute } from '@deepseek-ai/dsh-host-webserver'
-import { API_PATH, apply, HOST_EVENTS_PATH, inject, MUX_EVENTS_PATH, type HostConnectionHandle } from '../src/index.ts'
+import { API_PATH, apply as applyConnection, HOST_EVENTS_PATH, MUX_EVENTS_PATH, type HostConnectionHandle } from '../src/index.ts'
+import { apply as applyWeb, type Config as WebConfig } from '../src/web.ts'
+
+const inject = ['webServer']
+
+function apply(ctx: Context, config?: WebConfig): void {
+  applyConnection(ctx)
+  applyWeb(ctx, config)
+}
 
 /** Structural webServer fake recording both route registries. */
 function fakeHttpServer(
@@ -252,7 +260,7 @@ describe('connection node half', () => {
 
     expect(() => connection.rpc.handle('/rpc', async () => ({ ok: true, value: null }), {
       authority: 'trusted-host',
-    })).toThrow(/duplicate route/)
+    })).toThrow(/already has a handler/)
     await remove()
     expect(routes.map(candidate => candidate.path)).toEqual([API_PATH])
     await fiber.dispose()

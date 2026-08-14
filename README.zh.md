@@ -1,6 +1,12 @@
-# DeepSeek Harness
+# ⚠️ 非官方 DeepSeek Harness 桌面封装
 
 [English](README.md) | 中文
+
+> **本 fork 不是 DeepSeek 官方发布。** 它保留官方 DeepSeek Harness 的 Web UI 与 agent 运行时，只增加 Electron 应用外壳和原生安装包。此仓库中的安装包不由 DeepSeek AI 发布或提供支持。
+
+请从本 fork 的 [GitHub Releases](https://github.com/tppc-linksc/deepseek-harness-NEXA/releases) 下载未签名桌面版本，安装前阅读[桌面发布说明](apps/desktop/RELEASE_README.md)。
+
+## 上游项目
 
 DeepSeek Harness（`dsh`）是由 [DeepSeek AI](https://deepseek.com) 开发的开源 agent harness（智能体框架）。
 
@@ -27,12 +33,20 @@ npx @deepseek-ai/dsh web
 如需从仓库源码运行：
 
 ```sh
-git clone https://github.com/deepseek-ai/deepseek-harness.git
+git clone https://github.com/tppc-linksc/deepseek-harness-NEXA.git
 cd deepseek-harness
 pnpm install
 pnpm run build
 pnpm dsh web
 ```
+
+同一套 Web UI 也可以无端口桌面应用的形式运行：
+
+```sh
+pnpm run start:desktop
+```
+
+桌面形态会把会话、设置、凭据、插件、agent 配置、Chromium 状态和日志存放在自己的 Electron 应用数据目录中，不会复用正在运行的 Web profile 的 Harness home，也不会打开 HTTP 监听端口。
 
 ## 社区与支持
 

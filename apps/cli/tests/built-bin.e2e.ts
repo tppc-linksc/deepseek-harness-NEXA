@@ -708,6 +708,20 @@ describe.skipIf(!existsSync(dshBin))('dsh BUILT bin (node lib/bin.js, no tsx)', 
       expect(stdout).toContain("name: '@deepseek-ai/dsh-host-webserver'")
     }, 30_000)
 
+    it('prints a desktop profile with the Web carrier disabled and the desktop carrier active', async () => {
+      const { stdout, code, stderr } = await runBuiltBin(
+        ['--profile', 'desktop', '--dump-default-config'],
+        { DSH_HOME: home },
+      )
+      expect(code).toBe(0)
+      expect(stderr).toBe('')
+      expect(stdout).toContain("name: '@deepseek-ai/dsh-desktop-app'")
+      expect(stdout).toContain("name: '@deepseek-ai/dsh-host-directory-picker-native'")
+      expect(stdout).toMatch(/id: webserver[\s\S]*disabled: true/)
+      expect(stdout).toMatch(/id: connection-web[\s\S]*disabled: true/)
+      expect(stdout).toMatch(/id: modules-web[\s\S]*disabled: true/)
+    }, 30_000)
+
     it('prints the headless profile without Host or browser layers', async () => {
       const { stdout, code, stderr } = await runBuiltBin(
         ['--profile', 'headless', '--dump-default-config'],

@@ -95,13 +95,15 @@ export function clientBundle(
   libEntry: readonly string[],
   options: ClientBundleOptions = {},
 ): BuildFaceConfig {
-  const lib = clientLibraryConfig(id, libEntry, options.lib)
+  const libraries = options.separateLibEntries === true
+    ? libEntry.map(entry => clientLibraryConfig(id, [entry], options.lib))
+    : [clientLibraryConfig(id, libEntry, options.lib)]
   return ({ env }) => {
     const face = buildFace(env?.DSH_BUILD_FACE)
     const client = clientConfig(id, face === undefined
       ? 'src/client/index.ts'
       : 'lib/types/client/index.js')
-    const node = [lib, ...(options.companions ?? [])]
+    const node = [...libraries, ...(options.companions ?? [])]
     if (face === 'host') return options.hostPhase === true ? node : [SKIP_WORKSPACE_BUILD]
     if (face === 'client') return options.hostPhase === true ? [client] : [...node, client]
     return [...node, client]
@@ -137,6 +139,8 @@ interface ClientBundleOptions {
   readonly companions?: readonly UserConfig[]
   /** Overrides for the package's primary Node-side library config. */
   readonly lib?: UserConfig
+  /** Build Node entries separately so each publication file inlines shared implementation code. */
+  readonly separateLibEntries?: boolean
 }
 
 type BuildFace = 'host' | 'client' | undefined

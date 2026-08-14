@@ -2,7 +2,7 @@ import { EventEmitter } from 'node:events'
 import { Readable } from 'node:stream'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import { describe, expect, it } from 'vitest'
-import { bridge } from '../src/http-bridge.ts'
+import { bridgeFetch as bridge } from '@deepseek-ai/dsh-host-webserver'
 
 describe('HTTP bridge abort', () => {
   it('destroys a declared-oversize request instead of draining it', async () => {

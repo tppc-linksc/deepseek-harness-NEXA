@@ -1,0 +1,37 @@
+{
+  "name": "@deepseek-ai/dsh-desktop",
+  "productName": "DeepSeek Harness",
+  "description": "DeepSeek Harness desktop application",
+  "author": "Unofficial DeepSeek Harness Desktop contributors",
+  "version": "0.1.0-rc.5",
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/deepseek-ai/deepseek-harness.git",
+    "directory": "apps/desktop"
+  },
+  "type": "module",
+  "main": "lib/main.js",
+  "files": [
+    "lib/*.js"
+  ],
+  "scripts": {
+    "start": "electron .",
+    "package": "tsx ../../scripts/package-desktop.ts",
+    "package:mac": "tsx ../../scripts/package-desktop.ts --target mac --arch arm64",
+    "package:win": "tsx ../../scripts/package-desktop.ts --target win --arch x64",
+    "package:linux": "tsx ../../scripts/package-desktop.ts --target linux --arch x64"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@deepseek-ai/dsh": "workspace:^",
+    "@deepseek-ai/dsh-client-modules": "workspace:^",
+    "@deepseek-ai/dsh-desktop-app": "workspace:^",
+    "@deepseek-ai/dsh-web-frontend": "workspace:^"
+  },
+  "devDependencies": {
+    "electron": "43.4.0"
+  }
+}

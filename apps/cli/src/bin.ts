@@ -34,6 +34,7 @@ switch (invocation.mode) {
       profile: invocation.profile,
       patchFiles: invocation.patches,
       args: invocation.args,
+      watchUserPatches: process.env.DSH_DESKTOP_HOST !== '1',
     })
     break
   }

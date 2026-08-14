@@ -15,6 +15,8 @@ import type { Duplex } from 'node:stream'
 import { Context, Service } from '@deepseek-ai/cordis'
 import z from '@deepseek-ai/schemastery'
 
+export { bridgeFetch, DEFAULT_MAX_REQUEST_BODY_BYTES, type FetchHandler } from './fetch-bridge.ts'
+
 declare module '@deepseek-ai/cordis' {
   interface Context {
     webServer: WebServer

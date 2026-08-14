@@ -8,7 +8,7 @@
 
 解析分支顺序（`import(specifier)`）：平台种子词 → 外壳实例；记忆化记录 → 表层；外壳自身的静态注册表（`registerStatic`，app-shell）→ 模块；已注册 factory → 物化；模块图记录（`window.__DSH_BOOT__`）→ 加载外部 classic script + 物化；其他情况一律抛出异常。这是构建时 bundle 纯度门禁的运行时镜像。交给 factory 的同步 `require` 采用相同顺序，但不含异步加载分支，并把观察到的边记录到模块记录中。`prefetch` 是第一阶段到达钩子（只加载脚本并注册 factory；并发调用共享一个进行中的任务）；`invalidate` 会丢弃 factory 与物化记录，使下一次 prefetch/import 重新加载脚本；它是 HMR（热模块替换）钩子。
 
-Node 侧会扫描已启用的 Loader 配置项以发现 web `dsh.client` 包，解析每个 `exports["./client"]`，把构建后的 bundle 哈希写入启动图，并通过 `/plugins` 提供该文件及其 sourcemap。源码启动会把宿主侧导入映射到 TypeScript 源码，但仍消费这一构建后的客户端导出；缺失文件共享一条构建说明，随后以包／路径列表列出各项，而无关的文件系统错误仍是独立故障。
+Node 侧会全局观察 Loader fiber，并扫描已启用的配置项以发现 web `dsh.client` 包。包 manifest 会先从配置 profile 解析，以保留树外部署覆盖包的能力，再从本包的安装位置解析，使打包后的 Electron profile 即使无法让 `createRequire` 穿过修复后的 profile 链接，也能使用 `app.asar` 内的模块。系统解析每个 `exports["./client"]`，把构建后的 bundle 哈希写入启动图，并通过 Fetch 方法在 `/plugins` 下提供该文件及其 sourcemap。`./web` 适配器把该方法挂为 HTTP 路由，并经 Web server 的 index tap 注入图；desktop 桥通过 UtilityProcess 通道调用同一方法，Electron main 则把图注入自定义协议的 index。源码启动会把宿主侧导入映射到 TypeScript 源码，但仍消费这一构建后的客户端导出；缺失文件共享一条构建说明，随后以包／路径列表列出各项，而无关的文件系统错误仍是独立故障。Node 入口构建会关闭代码分割，使每个声明发布的文件都携带完整的运行时依赖闭包。
 
 ## 模型体验
 

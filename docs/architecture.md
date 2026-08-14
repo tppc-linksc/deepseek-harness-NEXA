@@ -16,13 +16,13 @@ There is no privileged core to patch: you extend dsh by mounting a plugin beside
 
 A running `dsh` is a plugin tree composed at boot from ordered layers.
 
-A **profile** is a named composition stored in the Harness home. It lists the bundles it stacks, holds any out-of-tree plugins it installs, and keeps the user's own `cordis.patch.yml`. `web` and `headless` ship as templates.
+A **profile** is a named composition stored in the Harness home. It lists the bundles it stacks, holds any out-of-tree plugins it installs, and keeps the user's own `cordis.patch.yml`. `web`, `desktop`, and `headless` ship as templates.
 
 A **bundle** is a distribution format for Cordis config rows and the code they mount, so whatever it inserts stays patchable by the layers above it.
 
 Each declares itself in its own `package.json` under a `dsh` field: `dsh.profile` lists a profile's bundles, and `dsh.bundle` points at a bundle's patch file.
 
-[`dsh-base`](../packages/bundle/base/README.md) is the first layer of every profile: model adapters, tools, persistence, sandbox and approval policy, settings, credentials, telemetry. [`dsh-web-app`](../packages/bundle/web-app/README.md) adds the browser application; [`dsh-headless`](../packages/bundle/headless/README.md) adds a one-shot runner with no server at all.
+[`dsh-base`](../packages/bundle/base/README.md) is the first layer of every profile: model adapters, tools, persistence, sandbox and approval policy, settings, credentials, telemetry. [`dsh-web-app`](../packages/bundle/web-app/README.md) adds the shared GUI composition, [`dsh-desktop-app`](../packages/bundle/desktop-app/README.md) replaces its browser-only carrier with the Electron bridge, and [`dsh-headless`](../packages/bundle/headless/README.md) adds a one-shot runner with no server at all.
 
 Layers apply to an empty entry list in this order: each bundle in the profile's listed order, then the profile's `cordis.patch.yml`, then the home-level one, then any `--patch` overlay. A patch targets a row by id and replaces its whole config, or inserts new rows.
 
@@ -35,6 +35,16 @@ dsh --profile web --dump-config
 Any row it prints can be replaced by a patch of your own.
 
 Composition mechanics are in [app-boot](../packages/boot/app-boot/README.md#profiles); config fields are in the generated [config catalog](config-catalog.md).
+
+## Desktop carrier
+
+[`apps/desktop`](../apps/desktop/README.md) runs the built Web shell in a sandboxed Electron renderer at the standard custom origin `dsh://app`. Electron main serves the shell and client-plugin bundles through that protocol, while a hidden UtilityProcess boots `dsh --profile desktop`. The two processes exchange validated structured-clone request and response messages; response bodies advance only after a pull signal, so long-lived event streams retain backpressure and cancellation without a socket.
+
+The desktop profile reuses the Web GUI roster but disables `dsh-host-webserver`, Web startup/runtime, HTTP module and connection adapters, and WebSocket HMR. The transport-independent `ctx.connection` dispatcher and `ctx.clientModules.fetch()` service remain active behind the utility-process bridge. The renderer uses the Fetch/SSE connection client, so the desktop application opens no HTTP listening port and exposes no preload API to client plugins.
+
+Packaged Electron processes cannot expose the Node internals required by Cordis configuration HMR. The desktop launcher therefore applies profile and Harness-home patch layers at Host startup instead of watching them; editing either `cordis.patch.yml` requires an application restart. Settings and credentials use their own runtime reload paths and remain live.
+
+Desktop and Web remain one product but have separate writable runtime domains. Electron sets `userData` to its `DeepSeek Harness/desktop` namespace; the child receives only that namespace's `runtime` and `runtime/agents` paths as `DSH_HOME` and `DSH_AGENTS_HOME`, and its output goes to the sibling `logs` directory. A concurrent Web process continues using its own Harness home, sessions, settings, credentials, plugin installation, storage, agent configuration, logs, and TCP listener. The [portless desktop carrier Agent Note](../.agents/notes/implemented/architecture/2026-08-14-portless-electron-desktop-carrier.md) owns the process and wire decisions.
 
 ## Core packages
 

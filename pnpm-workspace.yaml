@@ -38,6 +38,10 @@ peerDependencyRules:
 # default and only allow scripts we need. esbuild (native binary) and lefthook
 # (git hooks) genuinely need theirs.
 allowBuilds:
+  electron: true
+  # Pulled in by electron-builder's optional Squirrel support. The desktop
+  # release uses NSIS, so its Windows-installer lifecycle script is unused.
+  electron-winstaller: false
   esbuild: true
   lefthook: true
   # Cross-platform boundary for the persistent PTY backend, including ConPTY on Windows.
@@ -55,6 +59,7 @@ allowBuilds:
   '@deepseek-ai/dsh-subprocess-local@file:packages/subprocess/subprocess-local': true
 
 minimumReleaseAgeExclude:
+  - electron@43.4.0
   # Fresh pi-ai releases carry the model catalog updates that are the whole
   # point of bumping it; waiting out the release age would defeat that.
   - '@earendil-works/pi-ai@0.82.1'

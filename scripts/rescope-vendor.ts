@@ -599,7 +599,10 @@ function main(): void {
   const all = patterns(reverse)
   const files = execFileSync('git', ['ls-files', '-z'], { cwd: root, encoding: 'utf8' })
     .split('\0')
-    .filter(file => file !== '' && !excluded(file))
+    // A dirty worktree may delete a tracked file before the replacement file
+    // is committed. Exact-edit targets still fail above; generic rescoping has
+    // no remaining bytes to inspect in a deleted path.
+    .filter(file => file !== '' && !excluded(file) && existsSync(resolve(root, file)))
 
   const counts = new Map<string, { files: number; lines: number }>()
   const failures: string[] = []

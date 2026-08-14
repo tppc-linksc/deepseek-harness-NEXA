@@ -2,8 +2,7 @@
  * Node half of the client module system (`dsh.client` dual-face package): scans
  * the host Loader's entries for packages declaring `dsh.client`, composes the
  * `window.__DSH_BOOT__` entry graph (wire single source: {@link WebBootEntry}
- * in `./client/manifest.ts`), serves `/plugins/<id>/client.js` and its source
- * map, taps the index render to inject the boot manifest, and provides the
+ * in `./client/manifest.ts`) and provides the
  * `clientModuleHost` service (the HMR node half's registration/notification
  * face).
  *
@@ -23,14 +22,12 @@
 import { createHash } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { readFile } from 'node:fs/promises'
-import type { IncomingMessage, ServerResponse } from 'node:http'
-import { createRequire } from 'node:module'
 import { dirname, join } from 'node:path'
 import { Service } from '@deepseek-ai/cordis'
 import type { Context } from '@deepseek-ai/cordis'
 import type {} from '@deepseek-ai/cordis-plugin-loader'
-import type {} from '@deepseek-ai/dsh-host-webserver'
 import type { WebBootEntry, WebBootGraph } from './client/manifest.ts'
+import { createPackageJsonResolver } from './package-resolution.ts'
 
 export type {
   BootManifest, BootModuleRow, BootPluginRow, WebBootEntry, WebBootGraph,
@@ -175,14 +172,15 @@ export function injectBootManifest(html: string, graph: WebBootGraph): string {
 }
 
 /**
- * The web plugin table service: incremental `dsh.client` scan + wire composition
- * + bundle route + index tap. Construction runs the activation scan
+ * The client plugin table service: incremental `dsh.client` scan and wire
+ * composition. Transport adapters read {@link graph} and {@link clientPath}
+ * without owning the Loader scan. Construction runs the activation scan
  * synchronously — a malformed declaration or missing bundle among the
  * already-loaded entries aggregates into one loud throw (FAILED fiber; the
  * boot activation audit reports it).
  */
 export class ClientModuleRegistry extends Service {
-  static inject = ['webServer', 'loader']
+  static inject = ['loader']
 
   private readonly table = new Map<string, WebPluginRecord>()
   // Negative verdicts (unresolvable specifier — builtins like cordis:include,
@@ -198,7 +196,7 @@ export class ClientModuleRegistry extends Service {
 
   /**
    * Build the service: subscribe, seed, and run the activation flush.
-   * @param ctx - plugin context carrying webServer and loader.
+   * @param ctx - plugin context carrying the Loader entry tree.
    */
   constructor(ctx: Context) {
     super(ctx, 'clientModules')
@@ -209,8 +207,10 @@ export class ClientModuleRegistry extends Service {
     if (ctx.baseUrl === undefined) {
       throw new Error('client-modules: ctx.baseUrl is unset — the node half needs the config-tree anchor to resolve plugin packages')
     }
-    const require = createRequire(ctx.baseUrl)
-    this.resolvePkgJson = spec => require.resolve(`${spec}/package.json`)
+    // Profile resolution preserves out-of-tree overrides. A packaged Electron
+    // profile may link into app.asar, which createRequire cannot traverse;
+    // the hoisted installation beside this module is the in-box fallback.
+    this.resolvePkgJson = createPackageJsonResolver([ctx.baseUrl, import.meta.url])
 
     // Subscribe before seeding so a fiber arriving mid-activation lands in the
     // same dirty set (Set idempotence makes the overlap harmless). An entry-less
@@ -225,7 +225,7 @@ export class ClientModuleRegistry extends Service {
         this.flushQueued = false
         this.flush((err) => { ctx.logger.warn(err) })
       })
-    })
+    }, { global: true })
 
     // Activation pass: the initial scan IS the incremental path over the
     // current entries, flushed synchronously (nothing async between subscribe,
@@ -238,14 +238,6 @@ export class ClientModuleRegistry extends Service {
       throw new ClientPackageCompositionError(failures)
     }
 
-    ctx.effect(
-      () => ctx.webServer.register({ kind: 'prefix', path: '/plugins', handler: this.serveBundle }),
-      'client-modules: bundle route',
-    )
-    ctx.effect(
-      () => ctx.webServer.tapIndex(html => injectBootManifest(html, this.composed)),
-      'client-modules: boot manifest injection',
-    )
   }
 
   /**
@@ -263,6 +255,44 @@ export class ClientModuleRegistry extends Service {
    */
   clientPath(id: string): string | undefined {
     return this.table.get(id)?.clientPath
+  }
+
+  /**
+   * Serve one client bundle request through a transport-neutral Fetch response.
+   * @param request - GET or HEAD request under `/plugins/<id>/client.js`.
+   * @returns bundle, source map, or an explicit error response.
+   */
+  async fetch(request: Request): Promise<Response> {
+    if (request.method !== 'GET' && request.method !== 'HEAD') {
+      return new Response(null, { status: 405 })
+    }
+    let pathname: string
+    try {
+      pathname = decodeURIComponent(new URL(request.url).pathname)
+    } catch {
+      return new Response(null, { status: 400 })
+    }
+    const prefix = '/plugins/'
+    const mapSuffix = '/client.js.map'
+    const bundleSuffix = '/client.js'
+    const isSourceMap = pathname.startsWith(prefix) && pathname.endsWith(mapSuffix)
+    const suffix = isSourceMap ? mapSuffix : bundleSuffix
+    const clientPath = pathname.startsWith(prefix) && pathname.endsWith(suffix)
+      ? this.clientPath(pathname.slice(prefix.length, -suffix.length))
+      : undefined
+    const path = clientPath === undefined ? undefined : `${clientPath}${isSourceMap ? '.map' : ''}`
+    if (path === undefined) return new Response(null, { status: 404 })
+    try {
+      const body = await readFile(path)
+      return new Response(request.method === 'HEAD' ? null : body, {
+        headers: {
+          'content-type': isSourceMap ? 'application/json; charset=utf-8' : 'text/javascript; charset=utf-8',
+          'cache-control': 'no-cache',
+        },
+      })
+    } catch {
+      return new Response(null, { status: 404 })
+    }
   }
 
   /**
@@ -418,43 +448,6 @@ export class ClientModuleRegistry extends Service {
     }
   }
 
-  private readonly serveBundle = async (req: IncomingMessage, res: ServerResponse): Promise<void> => {
-    if (req.method !== 'GET' && req.method !== 'HEAD') {
-      res.writeHead(405)
-      res.end()
-      return
-    }
-    /* v8 ignore next -- `?? '/'` arm: node:http always sets url on server requests. */
-    const pathname = decodeURIComponent(new URL(req.url ?? '/', 'http://x').pathname)
-    // The id may contain a scope slash. Anything else under /plugins (including
-    // /plugins/events when the HMR row is absent) is an unknown resource.
-    const prefix = '/plugins/'
-    const mapSuffix = '/client.js.map'
-    const bundleSuffix = '/client.js'
-    const isSourceMap = pathname.startsWith(prefix) && pathname.endsWith(mapSuffix)
-    const suffix = isSourceMap ? mapSuffix : bundleSuffix
-    const clientPath = pathname.startsWith(prefix) && pathname.endsWith(suffix)
-      ? this.clientPath(pathname.slice(prefix.length, -suffix.length))
-      : undefined
-    const path = clientPath === undefined ? undefined : `${clientPath}${isSourceMap ? '.map' : ''}`
-    if (path === undefined) {
-      res.writeHead(404)
-      res.end()
-      return
-    }
-    try {
-      const body = await readFile(path)
-      res.writeHead(200, {
-        'content-type': isSourceMap ? 'application/json; charset=utf-8' : 'text/javascript; charset=utf-8',
-        'cache-control': 'no-cache',
-      })
-      res.end(body)
-    } catch {
-      // Registered but unreadable (bundle not built yet): loud 404 beats a silent SPA-fallback HTML page.
-      res.writeHead(404)
-      res.end()
-    }
-  }
 }
 
 export default ClientModuleRegistry

@@ -151,10 +151,18 @@
     - id: modules
       name: '@deepseek-ai/dsh-client-modules'
 
-    # Owns both ends of the web transport: node half binds the gateway to the
-    # webserver under /api; browser half is the fetch/SSE client.
+    # Browser carrier for the transport-independent module registry: exposes
+    # client bundles over HTTP and injects the graph into index.html.
+    - id: modules-web
+      name: '@deepseek-ai/dsh-client-modules/web'
+
+    # Logical API/RPC dispatcher shared by browser and desktop carriers.
     - id: connection
       name: '@deepseek-ai/dsh-client-connection'
+
+    # Browser-only HTTP/WebSocket carrier over the logical dispatcher.
+    - id: connection-web
+      name: '@deepseek-ai/dsh-client-connection/web'
       inject: [webRuntime]
       config:
         # LAN literals derived from the active bind plus --trusted-host extras.

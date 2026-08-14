@@ -16,13 +16,13 @@
 
 运行中的 `dsh` 是一棵插件树，由启动时按序叠加的各层组合而成。
 
-**profile** 是存放在 Harness home 中的具名组装。它列出自己叠放的组合包，存放自己安装的树外插件，并保存用户自己的 `cordis.patch.yml`。`web` 和 `headless` 作为模板随发行版交付。
+**profile** 是存放在 Harness home 中的具名组装。它列出自己叠放的组合包，存放自己安装的树外插件，并保存用户自己的 `cordis.patch.yml`。`web`、`desktop` 和 `headless` 作为模板随发行版交付。
 
 **组合包**是 Cordis 配置项及其挂载代码的分发格式，因此它插入的内容始终可被其上各层 patch。
 
 两者都在各自的 `package.json` 中通过 `dsh` 字段声明自己：`dsh.profile` 列出一个 profile 的组合包，`dsh.bundle` 指向一个组合包的 patch 文件。
 
-[`dsh-base`](../packages/bundle/base/README.md) 是每个 profile 的第一层：模型适配器、工具、持久化、沙箱与审批策略、设置、凭据、遥测。[`dsh-web-app`](../packages/bundle/web-app/README.md) 增加浏览器应用；[`dsh-headless`](../packages/bundle/headless/README.md) 增加一次性运行器，且完全不带服务器。
+[`dsh-base`](../packages/bundle/base/README.md) 是每个 profile 的第一层：模型适配器、工具、持久化、沙箱与审批策略、设置、凭据、遥测。[`dsh-web-app`](../packages/bundle/web-app/README.md) 增加共享 GUI 组装，[`dsh-desktop-app`](../packages/bundle/desktop-app/README.md) 以 Electron 桥替换其中仅供浏览器使用的载体，而 [`dsh-headless`](../packages/bundle/headless/README.md) 增加一次性运行器，且完全不带服务器。
 
 各层按此顺序应用在空条目列表之上：先按 profile 列出的顺序应用每个组合包，然后是 profile 的 `cordis.patch.yml`，然后是 home 级的那份，最后是任意 `--patch` overlay。一条 patch 按 id 定位某个条目并替换其整个 config，或插入新条目。
 
@@ -35,6 +35,16 @@ dsh --profile web --dump-config
 它打印出的任何条目，都可以由你自己的 patch 替换。
 
 组装机制见 [app-boot](../packages/boot/app-boot/README.md#profiles)；配置字段见生成的[配置目录](config-catalog.md)。
+
+## 桌面载体
+
+[`apps/desktop`](../apps/desktop/README.md) 在沙箱化 Electron renderer 中通过标准自定义源 `dsh://app` 运行构建后的 Web 外壳。Electron main 通过该协议提供外壳与客户端插件 bundle，隐藏 UtilityProcess 则启动 `dsh --profile desktop`。两个进程交换经过校验的 structured-clone 请求与响应消息；响应体只有在收到 pull 信号后才前进一步，因此长寿命事件流无需 socket 也能保留背压与取消语义。
+
+desktop profile 复用 Web GUI 名单，但禁用 `dsh-host-webserver`、Web startup/runtime、HTTP module/connection 适配器与 WebSocket HMR。与传输无关的 `ctx.connection` 分发器和 `ctx.clientModules.fetch()` 服务仍在 UtilityProcess 桥之后运行。renderer 使用 Fetch/SSE connection client，因此桌面应用不会打开 HTTP 监听端口，也不会向客户端插件暴露 preload API。
+
+打包后的 Electron 进程无法暴露 Cordis 配置 HMR 所需的 Node 内部模块。因此，desktop launcher 会在 Host 启动时应用 profile 与 Harness home 的 patch 层，而不会监视它们；编辑任一 `cordis.patch.yml` 后都需要重启应用。设置与凭据使用各自的运行时重载路径，仍可实时生效。
+
+Desktop 与 Web 仍是同一产品，但各自拥有独立的可写运行域。Electron 把 `userData` 设为自身的 `DeepSeek Harness/desktop` 命名空间；子进程仅把该命名空间中的 `runtime` 与 `runtime/agents` 作为 `DSH_HOME` 和 `DSH_AGENTS_HOME`，输出则写入同级 `logs` 目录。并发运行的 Web 进程继续使用自己的 Harness home、会话、设置、凭据、插件安装、存储、agent 配置、日志和 TCP 监听器。进程与 wire 决策由[无端口桌面载体 Agent Note](../.agents/notes/implemented/architecture/2026-08-14-portless-electron-desktop-carrier.md)负责。
 
 ## 核心包
 

@@ -1,13 +1,11 @@
 /** Node-half composition diagnostics for package metadata and built client bundles. */
 
 import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs'
-import type { IncomingMessage, ServerResponse } from 'node:http'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { Context } from '@deepseek-ai/cordis'
 import { afterEach, describe, expect, it } from 'vitest'
-import type { WebServer, WebRoute } from '@deepseek-ai/dsh-host-webserver'
 import { ClientModuleRegistry } from '../src/index.ts'
 
 let root: string | undefined
@@ -37,8 +35,8 @@ function writePackage(
   return clientPath
 }
 
-/** Construct the node-half service and capture its plugin-bundle route. */
-function constructWithRoute(packageNames: string[]): { service: ClientModuleRegistry; route: WebRoute } {
+/** Construct the node-half service over the enabled fixture entries. */
+function construct(packageNames: string[]): ClientModuleRegistry {
   const ctx = new Context()
   ctx.baseUrl = pathToFileURL(root!).href + '/'
   ctx.provide('loader', {
@@ -48,27 +46,36 @@ function constructWithRoute(packageNames: string[]): { service: ClientModuleRegi
       }
     },
   })
-  let route: WebRoute | undefined
-  const webServer: Pick<WebServer, 'port' | 'register' | 'tapIndex'> = {
-    port: 0,
-    register: (candidate) => {
-      if (candidate.path === '/plugins') route = candidate
-      return () => {}
-    },
-    tapIndex: () => () => {},
-  }
-  ctx.provide('webServer', webServer as WebServer)
-  const service = new ClientModuleRegistry(ctx)
-  if (route === undefined) throw new Error('client bundle route was not registered')
-  return { service, route }
-}
-
-/** Construct the node-half service over the enabled fixture entries. */
-function construct(packageNames: string[]): ClientModuleRegistry {
-  return constructWithRoute(packageNames).service
+  return new ClientModuleRegistry(ctx)
 }
 
 describe('client bundle activation', () => {
+  it('tracks a sibling loader fiber that starts after registry construction', async () => {
+    const packageName = '@fixture/late-sibling'
+    const clientPath = writePackage(packageName)
+    mkdirSync(dirname(clientPath), { recursive: true })
+    writeFileSync(clientPath, 'module.exports = {}\n')
+    const entry: { options: { name: string }; fiber?: object; disabled: boolean } = {
+      options: { name: packageName },
+      disabled: false,
+    }
+    const ctx = new Context()
+    ctx.baseUrl = pathToFileURL(root!).href + '/'
+    ctx.provide('loader', {
+      *entries() { yield entry },
+    })
+    let registry: ClientModuleRegistry | undefined
+    const owner = await ctx.plugin((child) => { registry = new ClientModuleRegistry(child) })
+    expect(registry!.graph().entries).toEqual([])
+
+    entry.fiber = {}
+    ctx.emit('internal/plugin', { entry } as never)
+    await Promise.resolve()
+
+    expect(registry!.graph().entries.map(row => row.id)).toEqual([packageName])
+    await owner.dispose()
+  })
+
   it('allows sibling dsh roles', () => {
     const currentName = '@fixture/current-client-field'
     const clientPath = writePackage(currentName, {
@@ -121,32 +128,26 @@ describe('client bundle activation', () => {
     writeFileSync(clientPath, 'module.exports = {}\n')
     const map = '{"version":3,"sources":["src/client/index.tsx"]}\n'
     writeFileSync(`${clientPath}.map`, map)
-    const { route } = constructWithRoute([packageName])
-    let status = 0
-    let headers: Record<string, string> | undefined
-    let body = ''
-    const response = {
-      writeHead(nextStatus: number, nextHeaders?: Record<string, string>) {
-        status = nextStatus
-        headers = nextHeaders
-        return response
-      },
-      end(chunk?: Uint8Array) {
-        body = chunk === undefined ? '' : Buffer.from(chunk).toString('utf8')
-        return response
-      },
-    } as unknown as ServerResponse
+    const service = construct([packageName])
+    const response = await service.fetch(new Request(
+      `http://dsh.internal/plugins/${packageName}/client.js.map`,
+    ))
 
-    await route.handler({
-      method: 'GET',
-      url: `/plugins/${packageName}/client.js.map`,
-    } as IncomingMessage, response)
-
-    expect(status).toBe(200)
-    expect(headers).toEqual({
-      'content-type': 'application/json; charset=utf-8',
+    expect(response.status).toBe(200)
+    expect(Object.fromEntries(response.headers)).toEqual({
       'cache-control': 'no-cache',
+      'content-type': 'application/json; charset=utf-8',
     })
-    expect(body).toBe(map)
+    expect(await response.text()).toBe(map)
+  })
+
+  it('rejects a malformed encoded plugin path', async () => {
+    const packageName = '@fixture/malformed-path'
+    const clientPath = writePackage(packageName)
+    mkdirSync(dirname(clientPath), { recursive: true })
+    writeFileSync(clientPath, 'module.exports = {}\n')
+    const response = await construct([packageName]).fetch(new Request('http://dsh.internal/plugins/%/client.js'))
+
+    expect(response.status).toBe(400)
   })
 })

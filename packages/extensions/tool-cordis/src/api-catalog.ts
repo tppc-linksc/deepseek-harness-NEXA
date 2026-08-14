@@ -380,8 +380,8 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
   },
   {
     key: 'clientModules',
-    summary: 'The web plugin table service: incremental `dsh.client` scan + wire composition + bundle route + index tap.',
-    description: 'The web plugin table service: incremental `dsh.client` scan + wire composition + bundle route + index tap. Construction runs the activation scan synchronously — a malformed declaration or missing bundle among the already-loaded entries aggregates into one loud throw (FAILED fiber; the boot activation audit reports it).',
+    summary: 'The client plugin table service: incremental `dsh.client` scan and wire composition.',
+    description: 'The client plugin table service: incremental `dsh.client` scan and wire composition. Transport adapters read graph and clientPath without owning the Loader scan. Construction runs the activation scan synchronously — a malformed declaration or missing bundle among the already-loaded entries aggregates into one loud throw (FAILED fiber; the boot activation audit reports it).',
     methods: [
       {
         signature: 'graph(): WebBootGraph',
@@ -394,6 +394,12 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         description: 'Absolute path of an entry\'s client bundle.',
         parameters: [{ name: 'id', description: 'entry id (package name).' }],
         returns: 'the path, or undefined for an unknown id.',
+      },
+      {
+        signature: 'async fetch(request: Request): Promise<Response>',
+        description: 'Serve one client bundle request through a transport-neutral Fetch response.',
+        parameters: [{ name: 'request', description: 'GET or HEAD request under `/plugins/<id>/client.js`.' }],
+        returns: 'bundle, source map, or an explicit error response.',
       },
       {
         signature: 'rebuilt(id: string): string | undefined',

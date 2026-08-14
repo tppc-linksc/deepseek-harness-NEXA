@@ -1,6 +1,6 @@
 {
   "name": "@deepseek-ai/dsh-client-connection",
-  "description": "Wire consumer layer: HTTP-up/WebSocket-down client, ConnectionController dual streams with reconnect, and fixture api",
+  "description": "Transport-independent Host RPC dispatcher and client connection loop with Web, desktop Fetch/SSE, and fixture carriers",
   "version": "0.1.0-rc.5",
   "publishConfig": {
     "access": "public"
@@ -25,6 +25,10 @@
     "./client": {
       "types": "./lib/types/client/index.d.ts",
       "default": "./lib/client.js"
+    },
+    "./web": {
+      "types": "./lib/types/web.d.ts",
+      "default": "./lib/web.js"
     },
     "./src/*": "./src/*",
     "./package.json": "./package.json"
@@ -51,6 +55,7 @@
     "lib/index.js",
     "lib/invariant.js",
     "lib/client.js",
+    "lib/web.js",
     "lib/types/**/*.d.ts"
   ],
   "peerDependencies": {
