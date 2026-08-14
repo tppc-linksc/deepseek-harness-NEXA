@@ -103,6 +103,12 @@ function sanitizeBuildPaths(staging: string): void {
   const extensions = new Set([
     '.css', '.html', '.js', '.json', '.map', '.md', '.mjs', '.txt', '.yaml', '.yml',
   ])
+  const portableRepositoryRoot = repositoryRoot.replaceAll('\\', '/')
+  const replacements: readonly [string, string][] = [
+    [`file:///${portableRepositoryRoot}`, 'file:///workspace/deepseek-harness'],
+    [repositoryRoot, '/workspace/deepseek-harness'],
+    [portableRepositoryRoot, '/workspace/deepseek-harness'],
+  ]
   const pending = [staging]
   while (pending.length > 0) {
     const directory = pending.pop()
@@ -115,7 +121,10 @@ function sanitizeBuildPaths(staging: string): void {
       }
       if (!entry.isFile() || !extensions.has(entry.name.slice(entry.name.lastIndexOf('.')))) continue
       const source = readFileSync(path, 'utf8')
-      const sanitized = source.replaceAll(repositoryRoot, '/workspace/deepseek-harness')
+      let sanitized = source
+      for (const [buildPath, releasePath] of replacements) {
+        sanitized = sanitized.replaceAll(buildPath, releasePath)
+      }
       if (sanitized !== source) writeFileSync(path, sanitized)
     }
   }
