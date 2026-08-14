@@ -18,35 +18,55 @@ DeepSeek Harness is currently in _developer preview_ and is iterating rapidly. *
 
 ## Run
 
-### Run from `npm`
+<a id="run-from-source"></a>
 
-Install `Node.js`, then run:
+### Run the desktop app from source
+
+Install the Node.js and pnpm versions supported by this repository, then run:
+
+```sh
+git clone https://github.com/tppc-linksc/deepseek-harness-NEXA.git
+cd deepseek-harness-NEXA
+pnpm install
+pnpm run start:desktop
+```
+
+`start:desktop` builds the shared runtime and Web client assets, then opens the Electron desktop window. The process remains attached to the current terminal; press `Ctrl+C` to stop it. The desktop app does not run `dsh web`, open a browser, or bind an HTTP port.
+
+If neither dependencies nor source files have changed, relaunch the built app directly:
+
+```sh
+pnpm --filter @deepseek-ai/dsh-desktop start
+```
+
+After editing source files, run `pnpm run start:desktop` again so the app is rebuilt before launch. The desktop surface keeps its sessions, settings, credentials, plugins, agent configuration, Chromium state, and logs under its Electron application-data directory; it does not reuse the running Web profile's Harness home.
+
+### Build a desktop installer locally
+
+Run this command from the repository root on the target operating system:
+
+```sh
+pnpm run package:desktop:current
+```
+
+The resulting DMG, NSIS EXE, or AppImage is written to `dist/installers`. The runtime contains platform-native dependencies, so build each platform's installer on macOS, Windows, or Linux respectively.
+
+### Run the Web UI
+
+To run the upstream Web UI, use the npm package directly:
 
 ```sh
 npx @deepseek-ai/dsh web
 ```
 
-The command starts the Web UI, served at `http://127.0.0.1:3080` by default. See [Web UI guide](docs/user/guide/index.md).
-
-### Run from source
-
-To run from a repository checkout:
+Alternatively, build and run it from the current checkout:
 
 ```sh
-git clone https://github.com/tppc-linksc/deepseek-harness-NEXA.git
-cd deepseek-harness
-pnpm install
 pnpm run build
 pnpm dsh web
 ```
 
-The same Web UI can run as the portless desktop application:
-
-```sh
-pnpm run start:desktop
-```
-
-The desktop surface keeps its sessions, settings, credentials, plugins, agent configuration, Chromium state, and logs under its Electron application-data directory; it does not reuse the running Web profile's Harness home or open an HTTP listening port.
+The Web UI listens on `http://127.0.0.1:3080` by default. See the [Web UI guide](docs/user/guide/index.md).
 
 ## Community and support
 

@@ -18,35 +18,55 @@ DeepSeek Harness 目前处于 _开发者预览_ 阶段，正在快速迭代。**
 
 ## 运行
 
-### 通过 `npm` 运行
+<a id="run-from-source"></a>
 
-安装 `Node.js`，然后运行：
+### 从源码运行桌面 App
+
+安装本仓库支持的 Node.js 与 pnpm 版本，然后运行：
+
+```sh
+git clone https://github.com/tppc-linksc/deepseek-harness-NEXA.git
+cd deepseek-harness-NEXA
+pnpm install
+pnpm run start:desktop
+```
+
+`start:desktop` 会构建共享运行时和 Web 客户端资源，然后直接打开 Electron 桌面窗口。进程会占用当前终端，按 `Ctrl+C` 即可退出。桌面 App 不会执行 `dsh web`、打开浏览器或监听 HTTP 端口。
+
+如果依赖和源码没有变化，已构建的 App 可以直接重新启动：
+
+```sh
+pnpm --filter @deepseek-ai/dsh-desktop start
+```
+
+修改源码后请再次运行 `pnpm run start:desktop`，以便重新构建后再启动。桌面形态会把会话、设置、凭据、插件、agent 配置、Chromium 状态和日志存放在自己的 Electron 应用数据目录中，不会复用正在运行的 Web profile 的 Harness home。
+
+### 在本机生成桌面安装包
+
+在对应目标系统的仓库根目录运行：
+
+```sh
+pnpm run package:desktop:current
+```
+
+生成的 DMG、NSIS EXE 或 AppImage 位于 `dist/installers`。运行时包含平台原生依赖，因此应在 macOS、Windows 或 Linux 上分别构建对应平台的安装包。
+
+### 运行 Web UI
+
+如需运行上游 Web UI，可以直接使用 npm 包：
 
 ```sh
 npx @deepseek-ai/dsh web
 ```
 
-该命令会启动 Web UI，默认地址为 `http://127.0.0.1:3080`。详见 [Web UI 指南](docs/user/guide/index.md)。
-
-### 从源码运行
-
-如需从仓库源码运行：
+也可以从当前源码构建并运行：
 
 ```sh
-git clone https://github.com/tppc-linksc/deepseek-harness-NEXA.git
-cd deepseek-harness
-pnpm install
 pnpm run build
 pnpm dsh web
 ```
 
-同一套 Web UI 也可以无端口桌面应用的形式运行：
-
-```sh
-pnpm run start:desktop
-```
-
-桌面形态会把会话、设置、凭据、插件、agent 配置、Chromium 状态和日志存放在自己的 Electron 应用数据目录中，不会复用正在运行的 Web profile 的 Harness home，也不会打开 HTTP 监听端口。
+Web UI 默认监听 `http://127.0.0.1:3080`。详见 [Web UI 指南](docs/user/guide/index.md)。
 
 ## 社区与支持
 
