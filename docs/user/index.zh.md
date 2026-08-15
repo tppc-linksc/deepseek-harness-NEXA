@@ -14,7 +14,7 @@ description: 完整保留 DeepSeek 官方 Harness Web UI 与 agent 运行时，�
 
 <header id="top" class="nexa-hero" aria-labelledby="nexa-hero-title">
 <div class="nexa-hero-copy">
-<p class="nexa-eyebrow">DeepSeek Harness Desktop</p>
+<p class="nexa-eyebrow">DeepSeek NEXA</p>
 <h2 id="nexa-hero-title">完整的 Harness。<br><em>现在，是一个 App。</em></h2>
 <p class="nexa-hero-lead">官方 Web UI、插件系统与 agent 运行时完整进入桌面。<br>不需要额外终端，也不启动本地 Web 服务。</p>
 <div class="nexa-actions"><a class="nexa-button nexa-button-primary" href="#download">免费下载</a><a class="nexa-button nexa-button-link" href="https://github.com/tppc-linksc/deepseek-harness-NEXA">查看 GitHub <span aria-hidden="true">↗</span></a></div>

@@ -14,7 +14,7 @@ English | [中文](index.zh.md)
 
 <header id="top" class="nexa-hero" aria-labelledby="nexa-hero-title">
 <div class="nexa-hero-copy">
-<p class="nexa-eyebrow">DeepSeek Harness Desktop</p>
+<p class="nexa-eyebrow">DeepSeek NEXA</p>
 <h2 id="nexa-hero-title">The full Harness.<br><em>Now, it is an app.</em></h2>
 <p class="nexa-hero-lead">The official Web UI, plugin system, and agent runtime enter the desktop intact.<br>No extra terminal and no local Web service.</p>
 <div class="nexa-actions"><a class="nexa-button nexa-button-primary" href="#download">Download free</a><a class="nexa-button nexa-button-link" href="https://github.com/tppc-linksc/deepseek-harness-NEXA">View on GitHub <span aria-hidden="true">↗</span></a></div>

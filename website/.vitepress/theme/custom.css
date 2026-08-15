@@ -216,11 +216,19 @@ html:has(.VPContent.is-home) .VPNavBar .social-links::before {
 
 .nexa-eyebrow,
 .nexa-section-label {
-  color: #bf4800;
-  font-size: 17px;
   font-weight: 650;
   letter-spacing: -.02em;
   line-height: 1.3;
+}
+
+.nexa-eyebrow {
+  color: var(--nexa-blue);
+  font-size: 22px;
+}
+
+.nexa-section-label {
+  color: #bf4800;
+  font-size: 17px;
 }
 
 .nexa-hero-copy h2 {
@@ -1484,7 +1492,10 @@ html:has(.VPContent.is-home) .VPNavBar .social-links::before {
     padding-top: 112px;
   }
 
-  .nexa-eyebrow,
+  .nexa-eyebrow {
+    font-size: 18px;
+  }
+
   .nexa-section-label {
     font-size: 14px;
   }
