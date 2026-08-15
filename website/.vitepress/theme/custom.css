@@ -43,9 +43,10 @@
 }
 
 .VPNavBar {
-  border-bottom: 1px solid var(--nexa-line) !important;
+  border-bottom: 0 !important;
   background: var(--nexa-nav) !important;
   backdrop-filter: saturate(180%) blur(20px);
+  box-shadow: 0 12px 34px rgb(29 29 31 / 4%);
 }
 
 .dark .VPNavBar,
@@ -65,6 +66,12 @@ html:has(.VPContent.is-home) .VPNavBar .dsh-tag {
   border-color: var(--nexa-line);
   background: color-mix(in srgb, var(--nexa-text) 5%, transparent);
   color: var(--nexa-muted);
+}
+
+html:has(.VPContent.is-home) .VPNavBar .translations::before,
+html:has(.VPContent.is-home) .VPNavBar .appearance::before,
+html:has(.VPContent.is-home) .VPNavBar .social-links::before {
+  display: none !important;
 }
 
 .VPContent.is-home {
@@ -145,9 +152,8 @@ html:has(.VPContent.is-home) .VPNavBar .dsh-tag {
   min-height: 52px;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid var(--nexa-line);
   padding: 0 max(28px, calc((100vw - 1180px) / 2));
-  background: var(--nexa-nav);
+  background: color-mix(in srgb, var(--nexa-nav) 46%, transparent);
   backdrop-filter: saturate(180%) blur(20px);
   font-size: 12px;
 }
@@ -193,7 +199,8 @@ html:has(.VPContent.is-home) .VPNavBar .dsh-tag {
 .nexa-hero {
   position: relative;
   scroll-margin-top: 120px;
-  padding: 92px 24px 70px;
+  margin-top: -52px;
+  padding: 144px 24px 70px;
   background:
     radial-gradient(circle at 50% -10%, var(--nexa-hero-glow), transparent 42%),
     linear-gradient(180deg, var(--nexa-surface-raised), var(--nexa-page));
@@ -1268,6 +1275,8 @@ html:has(.VPContent.is-home) .VPNavBar .dsh-tag {
 
 @media (max-width: 760px) {
   .nexa-product-nav {
+    position: relative;
+    top: auto;
     padding-right: 20px;
     padding-left: 20px;
   }
@@ -1281,7 +1290,7 @@ html:has(.VPContent.is-home) .VPNavBar .dsh-tag {
   }
 
   .nexa-hero {
-    padding: 74px 18px 58px;
+    padding: 126px 18px 58px;
   }
 
   .nexa-hero-copy h2 {
@@ -1472,7 +1481,7 @@ html:has(.VPContent.is-home) .VPNavBar .dsh-tag {
   }
 
   .nexa-hero {
-    padding-top: 60px;
+    padding-top: 112px;
   }
 
   .nexa-eyebrow,
