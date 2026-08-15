@@ -1,10 +1,10 @@
 # ⚠️ 非官方 DeepSeek Harness 桌面封装
 
-[English](README.md) | 中文
+[默认中文](README.md) | [English](README.en.md) | 中文
 
 > **本 fork 不是 DeepSeek 官方发布。** 它保留官方 DeepSeek Harness 的 Web UI 与 agent 运行时，只增加 Electron 应用外壳和原生安装包。此仓库中的安装包不由 DeepSeek AI 发布或提供支持。
 
-请从本 fork 的 [GitHub Releases](https://github.com/tppc-linksc/deepseek-harness-NEXA/releases) 下载未签名桌面版本，安装前阅读[桌面发布说明](apps/desktop/RELEASE_README.md)。
+访问[项目官网](https://www.deepseek-nexa.com)，或从本 fork 的 [GitHub Releases](https://github.com/tppc-linksc/deepseek-harness-NEXA/releases) 下载未签名桌面版本。安装前请阅读[桌面发布说明](apps/desktop/RELEASE_README.md)。
 
 ## 上游项目
 
@@ -15,6 +15,8 @@ DeepSeek Harness（`dsh`）是由 [DeepSeek AI](https://deepseek.com) 开发的�
 ## 开发者预览
 
 DeepSeek Harness 目前处于 _开发者预览_ 阶段，正在快速迭代。**未来将出现破坏兼容性的变更。**
+
+<a id="run"></a>
 
 ## 运行
 
