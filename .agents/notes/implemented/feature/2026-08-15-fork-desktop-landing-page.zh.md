@@ -14,7 +14,7 @@ Status: implemented
 
 产品首页维护指向固定桌面发行 tag 的直接下载链接，并显式列出每种受支持安装包：macOS ARM64 DMG、Windows x64 NSIS EXE 和 Linux x64 AppImage。下载区同时链接发布说明与校验文件，并就地说明未签名或 ad-hoc 签名限制。发布新桌面版本时只需更新这一对权威双语来源。
 
-文档投影器会保留 locale 首页的完整正文，不再只保留 frontmatter。它仍会移除只供仓库阅读使用的语言切换行，locale 切换仍由 VitePress 导航维护。网站沿用 VitePress 默认主题，并增加仓库维护的 CSS 展示层；权威文案仍存放在 `docs/user/`，`website/` 只包含配置与展示资源。
+文档投影器会保留 locale 首页的完整正文，不再只保留 frontmatter。它仍会移除只供仓库阅读使用的语言切换行，locale 切换仍由 VitePress 导航维护。两个 locale 根路由在 VitePress 默认首页布局中使用自定义编辑式编排，不使用默认 hero、功能卡片或第二套应用框架。深色氛围首屏、克制的字号层级、桌面窗口示意、线性下载列表与运行时轴线共同呈现产品层级，避免把每项事实都放进卡片。视觉氛围与窗口示意只使用 CSS 和语义化 HTML，因此首页没有远程媒体依赖；系统启用 `prefers-reduced-motion` 时会停止动效。权威文案仍存放在 `docs/user/`，`website/` 只包含配置与展示资源。
 
 GitHub Actions 使用 Pages 提供的 `DOCS_BASE` 构建网站，因此托管在 `/deepseek-harness-NEXA/` 项目路径时，导航与资源 URL 仍然有效。Pages 部署仍与网站构建分离，并要求 fork 仓库把 GitHub Actions 设为 Pages 发布源。
 
@@ -32,4 +32,4 @@ GitHub Actions 使用 Pages 提供的 `DOCS_BASE` 构建网站，因此托管在
 
 Pages 根路由成为产品与下载入口，不再只是首篇教程的快捷跳转。访问者可以找到全部受支持安装包、两个源码仓库和官方文档树，并能明确区分各自归属。产品说明由一对网站权威双语来源维护，投影器测试会阻止首页正文在上游同步时被再次删除。
 
-网站由此承担明确的发行维护责任：每次桌面发行都要更新两个 locale 来源中的版本标签和安装包 URL。仓库需要维护额外的视觉 CSS，但文档主题、搜索、侧边栏、路由和生成内容仍沿用现有 VitePress 系统。
+网站由此承担明确的发行维护责任：每次桌面发行都要更新两个 locale 来源中的版本标签和安装包 URL。仓库需要维护额外的视觉 CSS 与响应式语义标记，但文档主题、搜索、侧边栏、路由和生成内容仍沿用现有 VitePress 系统。

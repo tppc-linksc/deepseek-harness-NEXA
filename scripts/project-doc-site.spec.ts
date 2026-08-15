@@ -259,7 +259,7 @@ describe('docsPages locale routes', () => {
       const projected = projectedPageContent(source, page)
       expect(projected).toContain('layout: home')
       expect(projected).toContain('# DeepSeek Harness')
-      expect(projected).toContain('class="nexa-download-grid"')
+      expect(projected).toContain('class="nexa-download-list"')
       expect(projected).not.toContain('http-equiv: refresh')
     }
   })
