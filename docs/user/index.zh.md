@@ -10,64 +10,55 @@ description: 完整保留 DeepSeek 官方 Harness Web UI 与 agent 运行时，�
 [English](index.md) | 中文
 
 <main class="nexa-site">
-<header class="nexa-hero" aria-labelledby="nexa-hero-title">
-<div class="nexa-hero-grid" aria-hidden="true"></div>
-<div class="nexa-topline"><a class="nexa-brand" href="https://github.com/deepseek-ai/deepseek-harness"><span class="nexa-brand-mark" aria-hidden="true"></span><span>deepseek harness</span></a><div><span class="nexa-edition">NEXA 桌面封装</span><a href="https://github.com/tppc-linksc/deepseek-harness-NEXA">GitHub <span aria-hidden="true">↗</span></a></div></div>
-<div class="nexa-hero-layout">
+<nav class="nexa-product-nav" aria-label="桌面版导航"><a class="nexa-product-name" href="#top"><strong>DeepSeek Harness</strong><span>桌面版</span></a><div><a href="#experience">体验</a><a href="#inside">实现</a><a class="nexa-nav-download" href="#download">下载</a></div></nav>
+
+<header id="top" class="nexa-hero" aria-labelledby="nexa-hero-title">
 <div class="nexa-hero-copy">
-<p class="nexa-kicker"><span aria-hidden="true"></span>Desktop RC 05 · macOS / Windows / Linux</p>
-<h2 id="nexa-hero-title">完整 Harness，<br><em>桌面打开。</em></h2>
-<p class="nexa-hero-lead">官方 Web UI、插件系统与 agent 运行时原样进入桌面 App。无需另开终端，也不启动本地 Web 服务。</p>
-<div class="nexa-hero-actions"><a class="nexa-primary-action" href="#download"><span>选择系统下载</span><i aria-hidden="true">↓</i></a><a class="nexa-secondary-action" href="https://github.com/tppc-linksc/deepseek-harness-NEXA">查看源码 <span aria-hidden="true">↗</span></a></div>
-<p class="nexa-hero-disclosure"><strong>非官方社区桌面封装</strong> · DeepSeek AI 维护<a href="https://github.com/deepseek-ai/deepseek-harness">官方 Harness</a>；本 fork 只维护 App 外壳与安装包。</p>
+<p class="nexa-eyebrow">DeepSeek Harness Desktop</p>
+<h2 id="nexa-hero-title">完整的 Harness。<br><em>现在，是一个 App。</em></h2>
+<p class="nexa-hero-lead">官方 Web UI、插件系统与 agent 运行时完整进入桌面。<br>不需要额外终端，也不启动本地 Web 服务。</p>
+<div class="nexa-actions"><a class="nexa-button nexa-button-primary" href="#download">免费下载</a><a class="nexa-button nexa-button-link" href="https://github.com/tppc-linksc/deepseek-harness-NEXA">查看 GitHub <span aria-hidden="true">↗</span></a></div>
+<p class="nexa-availability">适用于 macOS、Windows 与 Linux · 0.1.0-rc.5</p>
 </div>
-<div class="nexa-workbench" aria-label="DeepSeek Harness 桌面界面示意">
-<div class="nexa-glow-orbit" aria-hidden="true"></div>
-<div class="nexa-app-window">
-<div class="nexa-titlebar"><span class="nexa-window-dots" aria-hidden="true"><i></i><i></i><i></i></span><strong>DeepSeek Harness</strong><span class="nexa-host-ready"><i aria-hidden="true"></i>Host ready</span></div>
-<div class="nexa-app-body">
-<aside class="nexa-app-sidebar">
-<div class="nexa-app-logo"><span class="nexa-mini-mark" aria-hidden="true"></span><b>deepseek</b><small>HARNESS</small></div>
-<div class="nexa-new-session"><span aria-hidden="true">＋</span> 新会话</div>
-<div class="nexa-side-heading"><span>工作区</span><span aria-hidden="true">⌕　＋</span></div>
-<div class="nexa-workspace-row"><span aria-hidden="true">◇</span><b>DeepSeek-NEXA</b></div>
-<div class="nexa-session-row"><i aria-hidden="true"></i><span>桌面端产品体验</span></div>
-<div class="nexa-settings-row"><span aria-hidden="true">⚙</span> 设置</div>
-</aside>
-<section class="nexa-app-main">
-<div class="nexa-official-chip"><i aria-hidden="true"></i>官方 Web UI</div>
-<div class="nexa-app-center"><span class="nexa-agent-mark" aria-hidden="true"><i></i></span><h3>探索未至之境</h3><p>选择工作区，开始一个新会话</p><div class="nexa-context-row"><span>▱ DeepSeek-NEXA</span><span>标准模式⌄</span></div><div class="nexa-composer"><span>输入任务，或使用 @ 添加上下文</span><i class="nexa-caret" aria-hidden="true"></i><button aria-label="发送示意" tabindex="-1">↑</button></div></div>
-<div class="nexa-app-status"><span><i aria-hidden="true"></i>Renderer connected</span><span>0 open ports</span></div>
-</section>
+
+<div class="nexa-product-stage" aria-label="DeepSeek Harness 桌面 App 界面示意">
+<div class="nexa-stage-halo" aria-hidden="true"></div>
+<div class="nexa-product-window">
+<div class="nexa-window-bar"><span class="nexa-window-controls" aria-hidden="true"><i></i><i></i><i></i></span><strong>DeepSeek Harness</strong><span class="nexa-window-state"><i aria-hidden="true"></i>Host 已就绪</span></div>
+<div class="nexa-window-content">
+<aside class="nexa-app-sidebar"><div class="nexa-app-brand"><span aria-hidden="true">◒</span><strong>deepseek</strong><small>HARNESS</small></div><button tabindex="-1"><span aria-hidden="true">＋</span> 新会话</button><p>工作区 <span aria-hidden="true">⌕　＋</span></p><div class="nexa-workspace"><span aria-hidden="true">▱</span><strong>DeepSeek-NEXA</strong></div><div class="nexa-session"><i aria-hidden="true"></i>桌面版产品体验</div><div class="nexa-app-settings"><span aria-hidden="true">⚙</span> 设置</div></aside>
+<section class="nexa-app-canvas"><span class="nexa-official-badge"><i aria-hidden="true"></i>官方 Web UI</span><div class="nexa-app-welcome"><span class="nexa-orbit" aria-hidden="true"><i></i></span><h3>探索未至之境</h3><p>选择工作区，开始一个新会话</p><div class="nexa-context"><span>▱ DeepSeek-NEXA</span><span>标准模式⌄</span></div><div class="nexa-prompt"><span>输入任务，或使用 @ 添加上下文</span><i aria-hidden="true"></i><b aria-hidden="true">↑</b></div></div><div class="nexa-canvas-status"><span><i aria-hidden="true"></i>Renderer connected</span><span>0 open ports</span></div></section>
 </div>
 </div>
-<div class="nexa-ipc-rail"><div><small>Electron renderer</small><strong>官方界面</strong></div><span><i aria-hidden="true"></i><b>私有进程 IPC</b><i aria-hidden="true"></i></span><div><small>UtilityProcess</small><strong>Harness Host</strong></div></div>
+<div class="nexa-stage-caption"><span>官方界面</span><i aria-hidden="true"></i><strong>私有进程 IPC</strong><i aria-hidden="true"></i><span>Harness Host</span></div>
 </div>
-</div>
-<div class="nexa-quick-downloads" aria-label="快速下载"><div><span>当前版本</span><strong>0.1.0-rc.5</strong></div><a href="https://github.com/tppc-linksc/deepseek-harness-NEXA/releases/download/desktop-v0.1.0-rc.5/DeepSeek-Harness-0.1.0-rc.5-mac-arm64.dmg"><span class="nexa-os-code">MAC</span><span><strong>macOS</strong><small>Apple Silicon · DMG</small></span><i aria-hidden="true">↓</i></a><a href="https://github.com/tppc-linksc/deepseek-harness-NEXA/releases/download/desktop-v0.1.0-rc.5/DeepSeek-Harness-0.1.0-rc.5-win-x64.exe"><span class="nexa-os-code">WIN</span><span><strong>Windows</strong><small>x64 · NSIS EXE</small></span><i aria-hidden="true">↓</i></a><a href="https://github.com/tppc-linksc/deepseek-harness-NEXA/releases/download/desktop-v0.1.0-rc.5/DeepSeek-Harness-0.1.0-rc.5-linux-x64.AppImage"><span class="nexa-os-code">LNX</span><span><strong>Linux</strong><small>x86_64 · AppImage</small></span><i aria-hidden="true">↓</i></a></div>
+
+<p class="nexa-disclosure"><strong>非官方社区桌面封装。</strong>DeepSeek AI 维护<a href="https://github.com/deepseek-ai/deepseek-harness">官方 Harness</a>；本 fork 只维护 App 外壳与安装包。</p>
 </header>
 
-<section class="nexa-experience" aria-labelledby="nexa-experience-title">
-<div class="nexa-section-intro"><p class="nexa-label">UI / UX First</p><h2 id="nexa-experience-title">打开 App，<br>直接开始任务。</h2><p>桌面版保留官方产品体验，只移除浏览器、端口与手动启动服务这些额外步骤。</p></div>
-<ol class="nexa-journey"><li><span>01</span><div class="nexa-step-visual nexa-step-launch" aria-hidden="true"><i></i><b>Harness</b></div><h3>打开 App</h3><p>窗口和 Host 随应用一起启动，不需要外挂终端。</p></li><li><span>02</span><div class="nexa-step-visual nexa-step-workspace" aria-hidden="true"><i></i><b>DeepSeek-NEXA</b><small>Workspace ready</small></div><h3>选择工作区</h3><p>继续使用官方工作区、插件与工具组合。</p></li><li><span>03</span><div class="nexa-step-visual nexa-step-session" aria-hidden="true"><i></i><b>开始新会话</b><small>Host connected</small></div><h3>开始会话</h3><p>界面通过私有 IPC 连接 Host，不监听 HTTP 端口。</p></li></ol>
+<section id="experience" class="nexa-experience" aria-labelledby="nexa-experience-title">
+<div class="nexa-section-copy"><p class="nexa-section-label">使用体验</p><h2 id="nexa-experience-title">打开。选择工作区。<br><em>开始。</em></h2><p>桌面版把窗口和 Harness Host 一起启动。没有浏览器地址、端口配置或需要一直挂着的终端。</p></div>
+<div class="nexa-experience-visual" aria-hidden="true"><div class="nexa-app-icon"><span>◒</span></div><div class="nexa-flow-line"><i></i><i></i><i></i></div><div class="nexa-mini-window"><div><i></i><i></i><i></i></div><span>DeepSeek Harness</span><strong>准备就绪</strong></div></div>
+<div class="nexa-facts"><div><strong>一次点击</strong><span>App 与 Host 同时启动</span></div><div><strong>零监听端口</strong><span>界面通过私有 IPC 通信</span></div><div><strong>独立状态</strong><span>不占用 Web UI 的目录与会话</span></div></div>
 </section>
 
-<section class="nexa-integrity" aria-labelledby="nexa-integrity-title">
-<div class="nexa-integrity-copy"><p class="nexa-label">同一个 Harness</p><h2 id="nexa-integrity-title">App 外壳之外，<br>仍是官方 Harness。</h2><p>项目、会话、插件、工具与 agent 运行时没有复制一套。桌面端只负责应用生命周期、私有进程通信和原生安装体验。</p><a href="https://github.com/deepseek-ai/deepseek-harness">查看官方上游 <span aria-hidden="true">↗</span></a></div>
-<div class="nexa-layer-stack" aria-label="桌面端技术分层"><div class="nexa-layer nexa-layer-official"><span>OFFICIAL</span><div><strong>DeepSeek Harness</strong><small>Web UI · Plugins · Agent Runtime</small></div><i>完整保留</i></div><div class="nexa-layer-connector"><span>private IPC</span></div><div class="nexa-layer nexa-layer-desktop"><span>NEXA</span><div><strong>Desktop shell</strong><small>Lifecycle · Installers · Isolated state</small></div><i>本 fork</i></div><div class="nexa-proof-strip"><span><strong>0</strong> 监听端口</span><span><strong>1</strong> 独立数据目录</span><span><strong>3</strong> 桌面平台</span></div></div>
+<section id="inside" class="nexa-inside" aria-labelledby="nexa-inside-title">
+<div class="nexa-inside-copy"><p class="nexa-section-label">里面仍是官方 Harness</p><h2 id="nexa-inside-title">熟悉的一切，<br>一项都没有少。</h2><p>项目、会话、插件、工具与 agent 运行时仍由官方 Harness 提供。桌面层只处理应用生命周期、原生安装和私有进程通信。</p><a href="https://github.com/deepseek-ai/deepseek-harness">查看官方上游 <span aria-hidden="true">↗</span></a></div>
+<div class="nexa-inside-visual" aria-label="官方 Harness 与桌面外壳关系"><div class="nexa-runtime-card"><small>OFFICIAL</small><span class="nexa-runtime-symbol" aria-hidden="true">◒</span><strong>DeepSeek Harness</strong><p>Web UI · Plugins · Agent Runtime</p></div><div class="nexa-private-link"><span></span><strong>private IPC</strong><span></span></div><div class="nexa-shell-card"><small>NEXA</small><strong>Desktop shell</strong><p>Lifecycle · Installers · Isolated state</p></div></div>
 </section>
 
 <section id="download" class="nexa-downloads" aria-labelledby="nexa-download-title">
-<div class="nexa-download-heading"><p class="nexa-label">Release 0.1.0-rc.5</p><h2 id="nexa-download-title">选好系统，<br>直接开始。</h2><p>安装包由 GitHub Releases 提供。macOS 与 Windows 版本没有商业代码签名，首次启动时可能出现系统安全提示。</p><div><a href="https://github.com/tppc-linksc/deepseek-harness-NEXA/releases/tag/desktop-v0.1.0-rc.5">发布说明 ↗</a><a href="https://github.com/tppc-linksc/deepseek-harness-NEXA/releases/download/desktop-v0.1.0-rc.5/SHA256SUMS.txt">SHA-256 校验 ↗</a></div></div>
+<div class="nexa-download-intro"><p class="nexa-section-label">免费下载</p><h2 id="nexa-download-title">选好系统。<br>打开新世界。</h2><p>当前版本 0.1.0-rc.5。安装包由 GitHub Releases 提供。</p></div>
 <div class="nexa-download-list">
-<a href="https://github.com/tppc-linksc/deepseek-harness-NEXA/releases/download/desktop-v0.1.0-rc.5/DeepSeek-Harness-0.1.0-rc.5-mac-arm64.dmg"><span class="nexa-installer-index">01</span><span class="nexa-installer-platform"><i>MAC</i><strong>macOS</strong></span><span class="nexa-installer-spec">Apple Silicon</span><span class="nexa-installer-format">DMG · ad-hoc 签名</span><b>下载 <i aria-hidden="true">↓</i></b></a>
-<a href="https://github.com/tppc-linksc/deepseek-harness-NEXA/releases/download/desktop-v0.1.0-rc.5/DeepSeek-Harness-0.1.0-rc.5-win-x64.exe"><span class="nexa-installer-index">02</span><span class="nexa-installer-platform"><i>WIN</i><strong>Windows</strong></span><span class="nexa-installer-spec">Windows 10+ · x64</span><span class="nexa-installer-format">NSIS EXE · 未签名</span><b>下载 <i aria-hidden="true">↓</i></b></a>
-<a href="https://github.com/tppc-linksc/deepseek-harness-NEXA/releases/download/desktop-v0.1.0-rc.5/DeepSeek-Harness-0.1.0-rc.5-linux-x64.AppImage"><span class="nexa-installer-index">03</span><span class="nexa-installer-platform"><i>LNX</i><strong>Linux</strong></span><span class="nexa-installer-spec">Linux · x86_64</span><span class="nexa-installer-format">免安装 AppImage</span><b>下载 <i aria-hidden="true">↓</i></b></a>
+<a href="https://github.com/tppc-linksc/deepseek-harness-NEXA/releases/download/desktop-v0.1.0-rc.5/DeepSeek-Harness-0.1.0-rc.5-mac-arm64.dmg"><span class="nexa-platform-icon" aria-hidden="true">⌘</span><span><strong>macOS</strong><small>Apple Silicon · DMG</small></span><b>下载 <i aria-hidden="true">↓</i></b></a>
+<a href="https://github.com/tppc-linksc/deepseek-harness-NEXA/releases/download/desktop-v0.1.0-rc.5/DeepSeek-Harness-0.1.0-rc.5-win-x64.exe"><span class="nexa-platform-icon" aria-hidden="true">⊞</span><span><strong>Windows</strong><small>Windows 10+ · x64 · EXE</small></span><b>下载 <i aria-hidden="true">↓</i></b></a>
+<a href="https://github.com/tppc-linksc/deepseek-harness-NEXA/releases/download/desktop-v0.1.0-rc.5/DeepSeek-Harness-0.1.0-rc.5-linux-x64.AppImage"><span class="nexa-platform-icon" aria-hidden="true">◫</span><span><strong>Linux</strong><small>x86_64 · AppImage</small></span><b>下载 <i aria-hidden="true">↓</i></b></a>
 </div>
+<p class="nexa-signing-note">macOS 与 Windows 版本没有商业代码签名，首次启动可能出现系统安全提示。<a href="https://github.com/tppc-linksc/deepseek-harness-NEXA/releases/tag/desktop-v0.1.0-rc.5">查看发布说明</a><span>·</span><a href="https://github.com/tppc-linksc/deepseek-harness-NEXA/releases/download/desktop-v0.1.0-rc.5/SHA256SUMS.txt">SHA-256 校验</a></p>
 </section>
 
-<section class="nexa-source" aria-labelledby="nexa-source-title"><div><p class="nexa-label">From source</p><h2 id="nexa-source-title">也可以从源码启动。</h2><p>克隆桌面 fork，安装仓库支持的 Node.js 与 pnpm 版本后运行：</p></div><pre aria-label="从源码运行指令"><code><span>$</span> pnpm install
+<section class="nexa-source" aria-labelledby="nexa-source-title"><div><p class="nexa-section-label">从源码运行</p><h2 id="nexa-source-title">两条命令，启动桌面版。</h2><p>克隆本 fork，并安装仓库支持的 Node.js 与 pnpm 版本。</p></div><pre aria-label="从源码运行指令"><code><span>$</span> pnpm install
 <span>$</span> pnpm run start:desktop</code></pre></section>
 
-<footer class="nexa-footer"><div><span class="nexa-brand-mark" aria-hidden="true"></span><div><strong>DeepSeek Harness / NEXA</strong><p>官方开源 Harness 的非官方桌面封装。</p></div></div><nav><a href="https://github.com/deepseek-ai/deepseek-harness">官方上游</a><a href="https://github.com/tppc-linksc/deepseek-harness-NEXA">桌面 fork</a><a href="./guide/quickstart">使用文档</a></nav><small>Community desktop edition · 2026</small></footer>
+<footer class="nexa-footer"><div><strong>DeepSeek Harness</strong><span>Desktop by NEXA</span></div><nav><a href="https://github.com/deepseek-ai/deepseek-harness">官方上游</a><a href="https://github.com/tppc-linksc/deepseek-harness-NEXA">桌面 fork</a><a href="./guide/quickstart">使用文档</a></nav><small>非官方社区桌面封装 · 2026</small></footer>
 </main>
