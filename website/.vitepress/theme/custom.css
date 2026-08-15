@@ -1085,6 +1085,7 @@ html:has(.VPContent.is-home) .VPNavBar .social-links::before {
 }
 
 .nexa-platform-icon {
+  --nexa-platform-mask: none;
   display: flex;
   width: 66px;
   height: 66px;
@@ -1094,7 +1095,32 @@ html:has(.VPContent.is-home) .VPNavBar .social-links::before {
   background: var(--nexa-surface-raised);
   box-shadow: 0 8px 25px rgb(0 0 0 / 7%);
   color: var(--nexa-text);
-  font-size: 30px;
+}
+
+.nexa-platform-icon::before {
+  width: 32px;
+  height: 32px;
+  background: currentColor;
+  content: "";
+  mask: var(--nexa-platform-mask) center / contain no-repeat;
+  -webkit-mask: var(--nexa-platform-mask) center / contain no-repeat;
+}
+
+.nexa-platform-icon-apple {
+  --nexa-platform-mask: url('/platform-icons/apple.svg');
+}
+
+.nexa-platform-icon-windows {
+  --nexa-platform-mask: url('/platform-icons/windows.svg');
+}
+
+.nexa-platform-icon-linux {
+  --nexa-platform-mask: url('/platform-icons/linux.svg');
+}
+
+.nexa-platform-icon-linux::before {
+  width: 36px;
+  height: 36px;
 }
 
 .nexa-download-list > a > span:nth-child(2) {
