@@ -311,9 +311,10 @@ const REPOSITORY_BADGE = /^\[!\[[^\]]*\]\(https:\/\/img\.shields\.io\/[^)]*\)\]\
 function withoutRepositoryChrome(markdown: string): string {
   const lines = markdown.split('\n')
   const switcher = lines.findIndex(line => LANGUAGE_SWITCHER.test(line))
+  const bodyStart = lines[0] === '---' ? lines.indexOf('---', 1) + 1 : 0
   // Only the switcher introducing the page qualifies; further down the same
   // text is prose or a sample rather than the page's own header.
-  if (switcher !== -1 && switcher < 8) {
+  if (switcher !== -1 && switcher < bodyStart + 8) {
     lines.splice(switcher, lines[switcher + 1] === '' ? 2 : 1)
   }
   const badge = lines.findLastIndex(line => REPOSITORY_BADGE.test(line))
@@ -328,19 +329,16 @@ function withoutRepositoryChrome(markdown: string): string {
  *
  * @param markdown Rewritten canonical Markdown content.
  * @param page Publication manifest entry for the content.
- * @returns Full Markdown for ordinary pages or frontmatter-only Markdown for a locale home page.
+ * @returns Rendered Markdown with repository-only navigation removed.
  */
 export function projectedPageContent(markdown: string, page: DocsPage): string {
-  if (page.sidebar !== null) return withoutRepositoryChrome(markdown)
-  if (!markdown.startsWith('---\n')) {
+  if (page.sidebar === null && !markdown.startsWith('---\n')) {
     throw new Error(`project-doc-site: locale home source ${JSON.stringify(page.source)} must start with YAML frontmatter.`)
   }
-  const closingDelimiter = '\n---\n'
-  const closing = markdown.indexOf(closingDelimiter, 4)
-  if (closing === -1) {
+  if (page.sidebar === null && markdown.indexOf('\n---\n', 4) === -1) {
     throw new Error(`project-doc-site: locale home source ${JSON.stringify(page.source)} has unclosed YAML frontmatter.`)
   }
-  return markdown.slice(0, closing + closingDelimiter.length)
+  return withoutRepositoryChrome(markdown)
 }
 
 /**

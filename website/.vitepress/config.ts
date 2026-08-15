@@ -147,14 +147,14 @@ const sharedTheme: Pick<DefaultTheme.Config, 'search' | 'socialLinks' | 'editLin
     },
   },
   socialLinks: [
-    { icon: 'github', link: 'https://github.com/deepseek-ai/deepseek-harness' },
+    { icon: 'github', link: 'https://github.com/tppc-linksc/deepseek-harness-NEXA' },
   ],
   editLink: {
     pattern: ({ frontmatter }: PageData) => {
       const data: unknown = frontmatter
       const editSource: unknown = typeof data === 'object' && data !== null ? Reflect.get(data, 'editSource') : undefined
       if (typeof editSource !== 'string') throw new Error('Projected documentation page has no editSource frontmatter.')
-      return `https://github.com/deepseek-ai/deepseek-harness/edit/master/${editSource}`
+      return `https://github.com/tppc-linksc/deepseek-harness-NEXA/edit/master/${editSource}`
     },
     text: '在 GitHub 上编辑此页',
   },
@@ -248,7 +248,7 @@ function siteTitle(previewTag: string): string {
 
 export default withMermaid({
   title: 'DeepSeek Harness',
-  description: '用于构建 Agent Harness 的插件化 SDK',
+  description: 'DeepSeek 官方 Harness 的社区桌面封装，提供 macOS、Windows 与 Linux 安装包',
   base,
   head: [
     // VitePress leaves head hrefs untouched, so the base belongs here explicitly.
@@ -265,7 +265,7 @@ export default withMermaid({
       label: '简体中文',
       lang: 'zh-CN',
       themeConfig: {
-        siteTitle: siteTitle('技术预览'),
+        siteTitle: siteTitle('社区桌面版'),
         nav: [
           { text: '入门', link: landingLink('root', guideModules.root.guide), activeMatch: '^/guide/' },
           ...moduleNav('root'),
@@ -291,7 +291,7 @@ export default withMermaid({
       lang: 'en-US',
       link: '/en/',
       themeConfig: {
-        siteTitle: siteTitle('Preview'),
+        siteTitle: siteTitle('Community Desktop'),
         nav: [
           { text: 'Guide', link: landingLink('en', guideModules.en.guide), activeMatch: '^/en/guide/' },
           ...moduleNav('en'),
@@ -306,7 +306,7 @@ export default withMermaid({
             const data: unknown = frontmatter
             const editSource: unknown = typeof data === 'object' && data !== null ? Reflect.get(data, 'editSource') : undefined
             if (typeof editSource !== 'string') throw new Error('Projected documentation page has no editSource frontmatter.')
-            return `https://github.com/deepseek-ai/deepseek-harness/edit/master/${editSource}`
+            return `https://github.com/tppc-linksc/deepseek-harness-NEXA/edit/master/${editSource}`
           },
           text: 'Edit this page on GitHub',
         },

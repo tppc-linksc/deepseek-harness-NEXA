@@ -1,6 +1,7 @@
 # Agent Note: 将文档根路由指向快速开始
 
 Status: implemented
+Archived: 2026-08-15
 
 [English](2026-08-11-quickstart-documentation-home.md) | 中文
 

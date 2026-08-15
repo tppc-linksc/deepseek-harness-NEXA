@@ -251,16 +251,16 @@ describe('rewriteMarkdown', () => {
 })
 
 describe('docsPages locale routes', () => {
-  it('redirects both locale roots to their locale-relative quick-start page', () => {
+  it('publishes a product landing page at both locale roots', () => {
     const homes = docsPages.filter(page => page.sidebar === null)
     expect(homes.map(page => page.route).sort()).toEqual(['en/index.md', 'index.md'])
     for (const page of homes) {
       const source = readFileSync(resolve(repositoryRoot, page.source), 'utf8')
       const projected = projectedPageContent(source, page)
-      expect(projected).toContain('layout: false')
-      expect(projected).toContain('http-equiv: refresh')
-      expect(projected).toContain('content: 0; url=./guide/quickstart')
-      expect(projected).not.toContain('# DeepSeek Harness')
+      expect(projected).toContain('layout: home')
+      expect(projected).toContain('# DeepSeek Harness')
+      expect(projected).toContain('class="nexa-download-grid"')
+      expect(projected).not.toContain('http-equiv: refresh')
     }
   })
 
@@ -456,11 +456,11 @@ describe('projectedPageContent', () => {
     order: 0,
   })
 
-  it('omits the source-only body from locale home pages', () => {
+  it('keeps the locale home body and drops its repository language switcher', () => {
     expect(projectedPageContent(
-      '---\nlayout: false\nhead:\n  - - meta\n    - http-equiv: refresh\n      content: 0; url=./guide/quickstart\n---\n\n# Harness\n\n[English](index.md) | 中文\n',
+      '---\nlayout: home\nhero:\n  name: Harness\n---\n\n# Harness\n\n[English](index.md) | 中文\n\n<div>Download</div>\n',
       page(null),
-    )).toBe('---\nlayout: false\nhead:\n  - - meta\n    - http-equiv: refresh\n      content: 0; url=./guide/quickstart\n---\n')
+    )).toBe('---\nlayout: home\nhero:\n  name: Harness\n---\n\n# Harness\n\n<div>Download</div>\n')
   })
 
   it('keeps the full body for ordinary pages', () => {
