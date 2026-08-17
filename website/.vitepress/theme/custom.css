@@ -963,13 +963,6 @@ html:has(.VPContent.is-home) .VPNavBar .social-links::before {
   letter-spacing: .12em;
 }
 
-.nexa-runtime-symbol {
-  color: var(--nexa-blue);
-  font-size: 74px;
-  line-height: 1;
-  transform: rotate(-18deg);
-}
-
 .nexa-runtime-card strong,
 .nexa-shell-card strong {
   margin-top: 20px;
@@ -1644,10 +1637,6 @@ html:has(.VPContent.is-home) .VPNavBar .social-links::before {
     min-height: 285px;
     border-radius: 26px;
     padding: 28px;
-  }
-
-  .nexa-runtime-symbol {
-    font-size: 56px;
   }
 
   .nexa-runtime-card strong {

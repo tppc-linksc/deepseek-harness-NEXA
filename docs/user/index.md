@@ -44,7 +44,7 @@ English | [中文](index.zh.md)
 
 <section id="inside" class="nexa-inside" aria-labelledby="nexa-inside-title">
 <div class="nexa-inside-copy"><p class="nexa-section-label">Official Harness inside</p><h2 id="nexa-inside-title">Everything familiar.<br>Nothing left behind.</h2><p>Projects, sessions, plugins, tools, and the agent runtime still come from the official Harness. The desktop layer handles only application lifecycle, native installation, and private process communication.</p><a href="https://github.com/deepseek-ai/deepseek-harness">View official upstream <span aria-hidden="true">↗</span></a></div>
-<div class="nexa-inside-visual" aria-label="Relationship between the official Harness and desktop shell"><div class="nexa-runtime-card"><small>OFFICIAL</small><span class="nexa-runtime-symbol" aria-hidden="true">◒</span><strong>DeepSeek Harness</strong><p>Web UI · Plugins · Agent Runtime</p></div><div class="nexa-private-link"><span></span><strong>private IPC</strong><span></span></div><div class="nexa-shell-card"><small>NEXA</small><strong>Desktop shell</strong><p>Lifecycle · Installers · Isolated state</p></div></div>
+<div class="nexa-inside-visual" aria-label="Relationship between the official Harness and desktop shell"><div class="nexa-runtime-card"><small>OFFICIAL</small><strong>DeepSeek Harness</strong><p>Web UI · Plugins · Agent Runtime</p></div><div class="nexa-private-link"><span></span><strong>private IPC</strong><span></span></div><div class="nexa-shell-card"><small>NEXA</small><strong>Desktop shell</strong><p>Lifecycle · Installers · Isolated state</p></div></div>
 </section>
 
 <section id="download" class="nexa-downloads" aria-labelledby="nexa-download-title">

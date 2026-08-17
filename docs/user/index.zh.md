@@ -44,7 +44,7 @@ description: 完整保留 DeepSeek 官方 Harness Web UI 与 agent 运行时，�
 
 <section id="inside" class="nexa-inside" aria-labelledby="nexa-inside-title">
 <div class="nexa-inside-copy"><p class="nexa-section-label">里面仍是官方 Harness</p><h2 id="nexa-inside-title">熟悉的一切，<br>一项都没有少。</h2><p>项目、会话、插件、工具与 agent 运行时仍由官方 Harness 提供。桌面层只处理应用生命周期、原生安装和私有进程通信。</p><a href="https://github.com/deepseek-ai/deepseek-harness">查看官方上游 <span aria-hidden="true">↗</span></a></div>
-<div class="nexa-inside-visual" aria-label="官方 Harness 与桌面外壳关系"><div class="nexa-runtime-card"><small>OFFICIAL</small><span class="nexa-runtime-symbol" aria-hidden="true">◒</span><strong>DeepSeek Harness</strong><p>Web UI · Plugins · Agent Runtime</p></div><div class="nexa-private-link"><span></span><strong>private IPC</strong><span></span></div><div class="nexa-shell-card"><small>NEXA</small><strong>Desktop shell</strong><p>Lifecycle · Installers · Isolated state</p></div></div>
+<div class="nexa-inside-visual" aria-label="官方 Harness 与桌面外壳关系"><div class="nexa-runtime-card"><small>OFFICIAL</small><strong>DeepSeek Harness</strong><p>Web UI · Plugins · Agent Runtime</p></div><div class="nexa-private-link"><span></span><strong>private IPC</strong><span></span></div><div class="nexa-shell-card"><small>NEXA</small><strong>Desktop shell</strong><p>Lifecycle · Installers · Isolated state</p></div></div>
 </section>
 
 <section id="download" class="nexa-downloads" aria-labelledby="nexa-download-title">
