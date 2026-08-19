@@ -14,7 +14,7 @@ Status: implemented
 
 `tppc-linksc/deepseek-harness-NEXA` 的 GitHub Releases 是桌面更新的权威来源。客户端通过 Releases API 发现稳定版和预发行版，忽略草稿，识别 `nexa-v<semver>` 与旧版 `desktop-v<semver>` 两类 tag，并选择最高语义版本。不高于当前安装版本的发行即使没有清单也表示已是最新；更高版本必须包含 `stable.json` 资产，而且清单版本必须与所选 tag 一致。更高版本缺少发布资料、请求限流、传输失败、其他 HTTP 失败和无效发布资料会分别呈现不同结果。
 
-每个已发布版本严格包含当前三个受支持目标各一个安装包：macOS ARM64 DMG、Windows x64 NSIS EXE 和 Linux x64 AppImage。原生构建任务全部结束后，发行工作流根据这些安装包生成 `stable.json` 与 `SHA256SUMS.txt`。清单记录 NEXA 版本、发行说明、已集成的上游版本和提交，以及每个安装包的平台、架构、安装器类型、文件名、URL、字节长度和 SHA-256 摘要。客户端只接受受支持的清单版本、属于 fork 仓库的 HTTPS 链接、预期的安装包扩展名和大小上限内的文件。
+每个已发布版本严格包含当前三个受支持目标各一个安装包：macOS ARM64 DMG、Windows x64 NSIS EXE 和 Linux x64 AppImage。每项原生构建都会在打包前拒绝不完整的部署运行时：macOS 要求 PTY addon 与可执行的 spawn helper，Windows 要求两个 ConPTY addon 及其兼容库和 OpenConsole 辅助程序，Linux 要求 PTY addon。原生构建任务全部结束后，发行工作流根据这些安装包生成 `stable.json` 与 `SHA256SUMS.txt`。语义版本包含预发行后缀的标签会创建 GitHub prerelease；稳定版本会成为最新稳定版。清单记录 NEXA 版本、发行说明、已集成的上游版本和提交，以及每个安装包的平台、架构、安装器类型、文件名、URL、字节长度和 SHA-256 摘要。客户端只接受受支持的清单版本、属于 fork 仓库的 HTTPS 链接、预期的安装包扩展名和大小上限内的文件。
 
 下载以 `.part` 后缀流式写入更新专用私有目录。管理器在传输期间限制声明的字节长度和最大体积，只有在计算并核对 SHA-256 后才提升文件并保存暂存元数据。启动恢复会重新计算摘要，再决定是否恢复暂存安装包；打开安装包前还会再次计算，因此下载后被修改的文件会被拒绝。macOS 打开 DMG 供用户手动拖入安装，Windows 打开 NSIS 安装器并退出正在运行的 App，Linux 为 AppImage 增加执行权限后将其打开。应用不会静默替换自身，不会执行清单提供的源码，也不会把摘要校验描述成代码签名。
 

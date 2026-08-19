@@ -132,12 +132,16 @@ jobs:
         shell: bash
         run: |
           VERSION="${RELEASE_TAG#nexa-v}"
+          RELEASE_FLAGS=(--latest)
+          if [[ "$VERSION" == *-* ]]; then
+            RELEASE_FLAGS=(--prerelease --latest=false)
+          fi
           if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
             gh release upload "$RELEASE_TAG" release-assets/* --clobber
-            gh release edit "$RELEASE_TAG" --latest
+            gh release edit "$RELEASE_TAG" "${RELEASE_FLAGS[@]}"
           else
             gh release create "$RELEASE_TAG" release-assets/* \
               --title "DeepSeek NEXA $VERSION" \
               --generate-notes \
-              --latest
+              "${RELEASE_FLAGS[@]}"
           fi

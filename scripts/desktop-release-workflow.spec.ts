@@ -29,6 +29,8 @@ describe('NEXA desktop release workflows', () => {
     expect(validateCommands.join('\n')).toContain('^nexa-v[0-9]+\\.[0-9]+\\.[0-9]+')
     expect(publishCommands.join('\n')).toContain('release:desktop:manifest')
     expect(publishCommands.join('\n')).toContain('gh release create')
+    expect(publishCommands.join('\n')).toContain('if [[ "$VERSION" == *-* ]]')
+    expect(publishCommands.join('\n')).toContain('--prerelease --latest=false')
     expect(publishCommands.join('\n')).toContain('--latest')
   })
 

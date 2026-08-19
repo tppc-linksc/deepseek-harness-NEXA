@@ -2,8 +2,6 @@
 
 import { execFileSync } from 'node:child_process'
 import {
-  chmodSync,
-  existsSync,
   mkdirSync,
   mkdtempSync,
   readdirSync,
@@ -15,9 +13,11 @@ import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { Arch, build, Platform, type Configuration } from 'electron-builder'
 import sharp from 'sharp'
-
-type DesktopTarget = 'linux' | 'mac' | 'win'
-type DesktopArch = 'arm64' | 'x64'
+import {
+  type DesktopArch,
+  type DesktopTarget,
+  validateDesktopNativePayload,
+} from './desktop-native-payload.ts'
 
 const repositoryRoot = resolve(import.meta.dirname, '..')
 const buildRoot = join(repositoryRoot, 'dist')
@@ -67,34 +67,6 @@ function assertTargetHost(target: DesktopTarget): void {
   }
   if (target === 'linux' && process.platform !== 'linux') {
     throw new Error('Linux AppImages must be built on Linux; use the documented builder container')
-  }
-}
-
-function assertFile(path: string, label: string): void {
-  if (!existsSync(path)) throw new Error(`deployed ${label} is missing: ${path}`)
-}
-
-function validateNativePayload(staging: string, target: DesktopTarget, arch: DesktopArch): void {
-  const modules = join(staging, 'node_modules')
-  if (target === 'mac') {
-    const prebuild = join(modules, 'node-pty', 'prebuilds', `darwin-${arch}`)
-    const helper = join(prebuild, 'spawn-helper')
-    assertFile(join(prebuild, 'pty.node'), `node-pty darwin-${arch} addon`)
-    assertFile(helper, `node-pty darwin-${arch} spawn helper`)
-    chmodSync(helper, 0o755)
-  } else if (target === 'win') {
-    assertFile(
-      join(modules, 'node-pty', 'prebuilds', `win32-${arch}`, 'pty.node'),
-      `node-pty win32-${arch} addon`,
-    )
-  } else {
-    const candidates = [
-      join(modules, 'node-pty', 'build', 'Release', 'pty.node'),
-      join(modules, 'node-pty', 'prebuilds', `linux-${arch}`, 'pty.node'),
-    ]
-    if (!candidates.some(existsSync)) {
-      throw new Error(`deployed node-pty linux-${arch} addon is missing: ${candidates.join(' or ')}`)
-    }
   }
 }
 
@@ -262,7 +234,7 @@ try {
     'deploy', '--prod', staging,
   ], { cwd: repositoryRoot, stdio: 'inherit' })
 
-  validateNativePayload(staging, target, arch)
+  validateDesktopNativePayload(staging, target, arch)
   sanitizeBuildPaths(staging)
   const icon = await createIcon(iconWork)
   const artifacts = await build({

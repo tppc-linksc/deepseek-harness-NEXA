@@ -40,6 +40,6 @@ Electron 不会在打包应用中暴露 Cordis 配置 HMR 所需的 Node 内部�
 
 构建仓库后运行 `pnpm --filter @deepseek-ai/dsh-desktop start`。各平台脚本会在 `dist/installers` 下生成 macOS DMG、Windows NSIS 安装程序或 Linux AppImage。
 
-一次 NEXA 发行使用 `nexa-v<桌面版本>` 标签。创建标签前，需同时更新桌面应用、桌面组合包与桌面更新客户端包的版本，在 `.nexa/upstream.json` 中记录所含官方 Harness 标签与完整 commit，并准备双语发行说明。`NEXA desktop release` 工作流会在原生 runner 上构建三个安装包，等待 `desktop-release` environment 审批，然后把安装包、`SHA256SUMS.txt` 与 `stable.json` 发布为同一个 GitHub Release。`pnpm run release:desktop:manifest -- --assets <目录> --output <目录> --tag <标签>` 可在本地生成相同元数据。
+一次 NEXA 发行使用 `nexa-v<桌面版本>` 标签。创建标签前，需同时更新桌面应用、桌面组合包与桌面更新客户端包的版本，在 `.nexa/upstream.json` 中记录所含官方 Harness 标签与完整 commit，并准备双语发行说明。`NEXA desktop release` 工作流会在原生 runner 上构建三个安装包，在打包前校验目标平台专用的 `node-pty` addon 与辅助程序，等待 `desktop-release` environment 审批，然后把安装包、`SHA256SUMS.txt` 与 `stable.json` 发布为同一个 GitHub Release。包含预发行后缀的版本（例如 `-rc.6`）会生成 GitHub prerelease，而不会取代最新稳定版。`pnpm run release:desktop:manifest -- --assets <目录> --output <目录> --tag <标签>` 可在本地生成相同元数据。
 
 定时运行的 `Official Harness update monitor` 会比较 `.nexa/upstream.json` 与 `deepseek-ai/deepseek-harness` 最新官方版本。如果两者不同，工作流只创建一个维护者 issue；它不会自动合并上游代码或发布 NEXA 版本。
