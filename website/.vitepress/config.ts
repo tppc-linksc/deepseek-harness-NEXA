@@ -185,6 +185,14 @@ const wordmark = readFileSync(resolve(import.meta.dirname, '../public/wordmark.s
 const siteStyle = `
 .dsh-lockup { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
 .dsh-wordmark { display: block; height: 22px; width: auto; color: var(--vp-c-text-1); }
+.dsh-product-name {
+  color: var(--vp-c-text-1);
+  font-size: 15px;
+  font-weight: 750;
+  letter-spacing: .06em;
+  line-height: 1;
+  white-space: nowrap;
+}
 .dsh-tag {
   display: inline-flex;
   align-items: center;
@@ -243,11 +251,11 @@ const scrollbarScript = `
  * @returns Markup placed beside the navigation-bar home link.
  */
 function siteTitle(previewTag: string): string {
-  return `<span class="dsh-lockup">${wordmark}<span class="dsh-tag">${previewTag}</span></span>`
+  return `<span class="dsh-lockup">${wordmark}<strong class="dsh-product-name">NEXA</strong><span class="dsh-tag">${previewTag}</span></span>`
 }
 
 export default withMermaid({
-  title: 'DeepSeek Harness',
+  title: 'DeepSeek Harness NEXA',
   description: 'DeepSeek 官方 Harness 的社区桌面封装，提供 macOS、Windows 与 Linux 安装包',
   base,
   head: [
