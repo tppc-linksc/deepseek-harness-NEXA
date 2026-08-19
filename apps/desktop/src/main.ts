@@ -5,7 +5,7 @@ import { mkdir, readFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
 import { dirname, extname, isAbsolute, join, relative, resolve } from 'node:path'
 import { randomUUID } from 'node:crypto'
-import { app, BrowserWindow, protocol, utilityProcess, type UtilityProcess } from 'electron'
+import { app, BrowserWindow, dialog, net, protocol, shell, utilityProcess, type UtilityProcess } from 'electron'
 import { injectBootManifest, type WebBootGraph } from '@deepseek-ai/dsh-client-modules'
 import {
   DESKTOP_MAX_REQUEST_BODY_BYTES,
@@ -18,6 +18,10 @@ import {
 } from '@deepseek-ai/dsh-desktop-app/protocol'
 import { desktopHostEnvironment, resolveDesktopPaths } from './paths.ts'
 import { isRendererShellPath, rendererSecurityHeaders } from './renderer-shell.ts'
+import { DesktopUpdateManager } from './update-manager.ts'
+import { handleDesktopUpdateRequest } from './update-router.ts'
+import { resolveBundledPnpmBin } from './bundled-tools.ts'
+import { desktopHostFailureAction, desktopHostFailureDialog } from './host-failure.ts'
 
 protocol.registerSchemesAsPrivileged([{
   scheme: DESKTOP_SCHEME,
@@ -230,6 +234,35 @@ class DesktopHost {
 
 let mainWindow: BrowserWindow | undefined
 let host: DesktopHost | undefined
+let updateManager: DesktopUpdateManager | undefined
+let updatePrompt: Promise<void> | undefined
+let hostFailurePrompt: Promise<void> | undefined
+
+function reportHostFailure(error: unknown): Promise<void> {
+  hostFailurePrompt ??= (async () => {
+    console.error(error)
+    mainWindow?.destroy()
+    const locations = {
+      profileDirectory: desktopPaths.profile,
+      logFile: join(desktopPaths.logs, 'host.log'),
+    }
+    try {
+      const choice = await dialog.showMessageBox(
+        desktopHostFailureDialog(error, locations, app.getLocale()),
+      )
+      const action = desktopHostFailureAction(choice.response, locations)
+      if (action.kind === 'open') {
+        const openError = await shell.openPath(action.path)
+        if (openError !== '') console.error(`could not open desktop recovery path: ${openError}`)
+      }
+    } catch (dialogError) {
+      console.error('desktop startup failure dialog failed', dialogError)
+    } finally {
+      app.exit(1)
+    }
+  })()
+  return hostFailurePrompt
+}
 
 function resolveFrontend(): { index: string; root: string } {
   const index = require.resolve('@deepseek-ai/dsh-web-frontend/dist/index.html')
@@ -261,9 +294,17 @@ async function startHost(): Promise<DesktopHost> {
     mkdir(desktopPaths.runtime, { recursive: true }),
     mkdir(desktopPaths.agents, { recursive: true }),
     mkdir(desktopPaths.logs, { recursive: true }),
+    mkdir(desktopPaths.profile, { recursive: true }),
+    mkdir(desktopPaths.commandRuntime, { recursive: true }),
   ])
-  const child = utilityProcess.fork(resolveCliBin(), ['--profile', 'desktop'], {
-    env: desktopHostEnvironment(process.env, desktopPaths),
+  const dshBin = resolveCliBin()
+  const child = utilityProcess.fork(dshBin, ['--profile', 'desktop'], {
+    env: desktopHostEnvironment(process.env, desktopPaths, {
+      appExecutable: process.execPath,
+      dshBin,
+      pnpmBin: resolveBundledPnpmBin(),
+      electronVersion: process.versions.electron,
+    }),
     // Source launches need the Loader's internal resolver to honor the profile
     // module base. Electron strips this internal-only flag from packaged apps,
     // whose deployment instead provides a complete hoisted dependency closure.
@@ -282,21 +323,22 @@ async function startHost(): Promise<DesktopHost> {
     child,
     () => { mainWindow?.webContents.reload() },
     (error) => {
-      console.error(error)
-      mainWindow?.destroy()
-      app.exit(1)
+      void reportHostFailure(error)
     },
   )
 }
 
 async function createWindow(): Promise<void> {
   const desktopHost = host ??= await startHost()
+  const desktopUpdates = updateManager ??= await startUpdateManager()
   const frontend = resolveFrontend()
   await desktopHost.ready
   if (!protocol.isProtocolHandled(DESKTOP_SCHEME)) {
     protocol.handle(DESKTOP_SCHEME, async (request) => {
       const url = new URL(request.url)
       if (!isDesktopUrl(url)) return new Response('not found', { status: 404 })
+      const updateResponse = await handleDesktopUpdateRequest(request, url, desktopUpdates)
+      if (updateResponse !== undefined) return updateResponse
       const graph = desktopHost.currentGraph()
       if (graph === undefined) return new Response('desktop Host is starting', { status: 503 })
       if (isRendererShellPath(url.pathname)) {
@@ -332,6 +374,69 @@ async function createWindow(): Promise<void> {
   })
   mainWindow.on('closed', () => { mainWindow = undefined })
   await mainWindow.loadURL(`${DESKTOP_ORIGIN}/`)
+  if (desktopUpdates.shouldAutomaticallyCheck()) {
+    updatePrompt ??= promptForAutomaticUpdate(desktopUpdates, mainWindow)
+      .catch((error: unknown) => { console.error('automatic desktop update prompt failed', error) })
+      .finally(() => { updatePrompt = undefined })
+  }
+}
+
+async function startUpdateManager(): Promise<DesktopUpdateManager> {
+  const manager = new DesktopUpdateManager({
+    currentVersion: app.getVersion(),
+    platform: process.platform,
+    arch: process.arch,
+    storageDirectory: desktopPaths.updates,
+    fetch: async (input, init) => net.fetch(input, init),
+    openPath: async path => shell.openPath(path),
+    quit: () => { app.quit() },
+  })
+  await manager.initialize()
+  return manager
+}
+
+async function promptForAutomaticUpdate(manager: DesktopUpdateManager, window: BrowserWindow): Promise<void> {
+  try {
+    await manager.check()
+  } catch {
+    return
+  }
+  const available = manager.state()
+  if (available.phase !== 'available' || available.availableVersion === undefined || window.isDestroyed()) return
+  const upstream = available.upstreamVersion === undefined ? '' : `\n包含官方 Harness ${available.upstreamVersion}。`
+  const updateLabel = process.platform === 'darwin'
+    ? '下载并打开 DMG'
+    : process.platform === 'linux'
+      ? '下载并打开 AppImage'
+      : '下载并安装'
+  const platformDetail = process.platform === 'win32'
+    ? '下载完成后应用将退出并启动安装程序，请按系统提示完成更新并重新打开应用。'
+    : process.platform === 'darwin'
+      ? '下载完成后会打开 DMG，请在系统窗口中替换应用并重新打开。未签名应用无法静默替换自身。'
+      : '下载完成后会打开 AppImage；请按系统提示完成替换并重新打开应用。'
+  const choice = await dialog.showMessageBox(window, {
+    type: 'info',
+    title: 'DeepSeek NEXA 更新',
+    message: `发现 DeepSeek NEXA ${available.availableVersion}`,
+    detail: `应用会下载适合当前系统的安装包并进行 SHA-256 校验。${upstream}\n${platformDetail}`,
+    buttons: [updateLabel, '稍后'],
+    defaultId: 0,
+    cancelId: 1,
+    noLink: true,
+  })
+  if (choice.response !== 0 || window.isDestroyed()) return
+  manager.startUpdate()
+  await manager.waitForOperation()
+  const completed = manager.state()
+  if (completed.phase === 'error' && !window.isDestroyed()) {
+    await dialog.showMessageBox(window, {
+      type: 'error',
+      title: 'DeepSeek NEXA 更新',
+      message: completed.error ?? '安装包下载失败，请稍后重试。',
+      buttons: ['好'],
+      noLink: true,
+    })
+  }
 }
 
 const singleInstance = app.requestSingleInstanceLock()
@@ -356,7 +461,6 @@ if (!singleInstance) {
     if (mainWindow === undefined) void createWindow()
   })
   void app.whenReady().then(createWindow).catch((error: unknown) => {
-    console.error(error)
-    app.exit(1)
+    void reportHostFailure(error)
   })
 }

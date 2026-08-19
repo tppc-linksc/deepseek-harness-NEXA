@@ -4,12 +4,12 @@
     - button "通用设置":
       - img
       - text: 通用设置
-    - button "模型":
+    - button "模型配置":
       - img
-      - text: 模型
-    - button "插件":
+      - text: 模型配置
+    - button "运行组件":
       - img
-      - text: 插件
+      - text: 运行组件
     - button "Agent 预设":
       - img
       - text: Agent 预设

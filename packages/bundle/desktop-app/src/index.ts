@@ -6,7 +6,10 @@ import { addHarnessSourceSection } from '@deepseek-ai/dsh-app-boot'
 import type {} from '@deepseek-ai/cordis-plugin-loader'
 import type {} from '@deepseek-ai/dsh-client-connection'
 import type {} from '@deepseek-ai/dsh-client-modules'
+import type {} from '@deepseek-ai/dsh-subprocess'
 import type {} from '@deepseek-ai/dsh-system-prompt'
+import { installDesktopMarketServices } from './desktop-market-services.ts'
+import { PortlessWebServer } from './portless-webserver.ts'
 import {
   parseDesktopMainMessage,
   type DesktopHostMessage,
@@ -17,7 +20,7 @@ import {
 export const name = 'desktop-app'
 
 /** Services required before the desktop bridge can accept requests. */
-export const inject = ['clientModules', 'connection']
+export const inject = ['clientModules', 'connection', 'subprocess']
 
 const SOURCE_ROOT = fileURLToPath(new URL('../../../..', import.meta.url))
 
@@ -55,6 +58,8 @@ export function apply(ctx: Context): void {
   if (parentPort === undefined || parentPort === null) {
     throw new Error('desktop-app: the desktop profile must run in an Electron UtilityProcess')
   }
+  const portlessWebServer = new PortlessWebServer(ctx)
+  installDesktopMarketServices(ctx)
   const active = new Map<string, ActiveResponse>()
   const send = (message: DesktopHostMessage): void => { parentPort.postMessage(message) }
 
@@ -77,7 +82,7 @@ export function apply(ctx: Context): void {
     const pathname = new URL(request.url).pathname
     const response = pathname === '/plugins' || pathname.startsWith('/plugins/')
       ? await ctx.clientModules.fetch(request)
-      : await ctx.connection.dispatch(request, 'loopback')
+      : await portlessWebServer.fetch(request, () => ctx.connection.dispatch(request, 'loopback'))
     if (!active.has(message.id)) return
     const reader = response.body?.getReader()
     if (reader !== undefined) state.reader = reader
@@ -153,3 +158,5 @@ export function apply(ctx: Context): void {
 }
 
 export * from './protocol.ts'
+export * from './desktop-market-services.ts'
+export * from './portless-webserver.ts'

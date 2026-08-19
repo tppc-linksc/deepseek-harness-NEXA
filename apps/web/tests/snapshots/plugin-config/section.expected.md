@@ -4,12 +4,12 @@
     - button "通用设置":
       - img
       - text: 通用设置
-    - button "模型":
+    - button "模型配置":
       - img
-      - text: 模型
-    - button "插件":
+      - text: 模型配置
+    - button "运行组件":
       - img
-      - text: 插件
+      - text: 运行组件
     - button "Agent 预设":
       - img
       - text: Agent 预设
@@ -17,12 +17,12 @@
   - button "关闭":
     - img
     - text: 关闭
-  - heading "插件" [level=2]
-  - paragraph: 配置和查看本部署已安装的插件。
-  - tablist "插件视图":
-    - tab "插件配置" [selected]
-    - tab "插件列表"
-  - tabpanel "插件配置":
+  - heading "运行组件" [level=2]
+  - paragraph: 查看当前 Harness/Cordis 运行时加载的内部组件，并管理它们开放的设置。
+  - tablist "运行组件视图":
+    - tab "组件设置" [selected]
+    - tab "组件清单"
+  - tabpanel "组件设置":
     - list:
       - listitem:
         - 'button "展开设置: 终端"':

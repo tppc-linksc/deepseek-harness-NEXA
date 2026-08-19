@@ -558,7 +558,7 @@ describe('boot', () => {
     }
   })
 
-  it('can resolve bare plugins from the harness when the config project shadows their package name', async () => {
+  it('resolves config-, host-, and ambient-owned bare plugins without Node internal loader access', async () => {
     const dir = tmp()
     const harness = tmp()
     const absolutePlugin = join(dir, 'absolute.mjs')
@@ -605,7 +605,10 @@ describe('boot', () => {
       `  name: ${JSON.stringify(absolutePlugin)}`,
       '',
     ].join('\n'))
-    const configOwned = await boot(NAME, configOwnedPath)
+    const withoutInternalLoader = (hostCtx: Context): void => {
+      hostCtx.loader.internal = undefined
+    }
+    const configOwned = await boot(NAME, configOwnedPath, undefined, withoutInternalLoader)
     try {
       expect(configOwned.get('shadowPluginLoaded')).toBe(true)
       expect(configOwned.get('systemPrompt')).toBeUndefined()
@@ -614,7 +617,7 @@ describe('boot', () => {
       await configOwned.fiber.dispose()
     }
     const harnessBaseUrl = pathToFileURL(join(harness, 'entry.mjs')).href
-    const ctx = await boot(NAME, hostOwnedPath, undefined, undefined, harnessBaseUrl)
+    const ctx = await boot(NAME, hostOwnedPath, undefined, withoutInternalLoader, harnessBaseUrl)
     try {
       expect(ctx.get('harnessPluginLoaded')).toBe(true)
       expect(ctx.get('shadowPluginLoaded')).toBeUndefined()
@@ -622,6 +625,15 @@ describe('boot', () => {
       expect(ctx.get('absolutePluginLoaded')).toBe(true)
     } finally {
       await ctx.fiber.dispose()
+    }
+    const ambientDir = tmp()
+    const ambientPath = join(ambientDir, 'ambient.cordis.yml')
+    writeFileSync(ambientPath, '- id: prompt\n  name: \'@deepseek-ai/dsh-system-prompt\'\n')
+    const ambient = await boot(NAME, ambientPath, undefined, withoutInternalLoader)
+    try {
+      expect(ambient.get('systemPrompt')).toBeDefined()
+    } finally {
+      await ambient.fiber.dispose()
     }
   })
 

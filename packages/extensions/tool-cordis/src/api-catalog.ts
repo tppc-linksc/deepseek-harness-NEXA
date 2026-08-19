@@ -538,6 +538,37 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
     ],
   },
   {
+    key: 'desktopPnpm',
+    summary: 'Package-manager service that runs one official DSH plugin operation at a time.',
+    description: 'Package-manager service that runs one official DSH plugin operation at a time.',
+    methods: [
+      {
+        signature: 'run(args: readonly string[], signal?: AbortSignal): DesktopPnpmHandle',
+        description: 'Run packaged pnpm directly in the active desktop profile.',
+        parameters: [{ name: 'args', description: 'pnpm arguments following its JavaScript entry.' }, { name: 'signal', description: 'optional operation cancellation.' }],
+        returns: 'live output streams and completion.',
+      },
+      {
+        signature: 'runPlugin(args: readonly string[], invokingDir: string, signal?: AbortSignal): DesktopPnpmHandle',
+        description: 'Run the official `dsh plugin` command against the desktop profile.',
+        parameters: [{ name: 'args', description: 'plugin subcommand arguments supplied by the market.' }, { name: 'invokingDir', description: 'absolute directory anchoring relative package specifications.' }, { name: 'signal', description: 'optional operation cancellation.' }],
+        returns: 'live output streams and completion.',
+      },
+    ],
+  },
+  {
+    key: 'desktopProfiles',
+    summary: 'Structural service consumed by community desktop plugins.',
+    description: 'Structural service consumed by community desktop plugins.',
+    methods: [
+      {
+        signature: 'readonly current: DesktopCurrentProfile',
+        description: 'Profile backing the active Cordis generation.',
+        parameters: [],
+      },
+    ],
+  },
+  {
     key: 'directoryPicker',
     summary: 'Abstract directory-picking service.',
     description: 'Abstract directory-picking service. Subclass, implement `capability()`, and load the subclass as a plugin — it registers as `ctx.directoryPicker` (one implementation per context; loading a second throws, cordis\' standard duplicate-service behavior). The capability object must be stable for the service lifetime: consumers may capture it across calls.',
@@ -2932,6 +2963,14 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'CredentialRef',
     declaration: 'export type CredentialRef = Branded<\'CredentialRef\'>;',
+  },
+  {
+    name: 'DesktopCurrentProfile',
+    declaration: 'export interface DesktopCurrentProfile {\n    readonly name: typeof PROFILE_NAME;\n    readonly dir: string;\n}',
+  },
+  {
+    name: 'DesktopPnpmHandle',
+    declaration: 'export interface DesktopPnpmHandle {\n    readonly stdout: Readable;\n    readonly stderr: Readable;\n    readonly done: Promise<SubprocessOutcome>;\n    cancel(): void;\n}',
   },
   {
     name: 'DiffCallView',

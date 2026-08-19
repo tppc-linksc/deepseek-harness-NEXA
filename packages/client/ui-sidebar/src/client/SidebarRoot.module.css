@@ -241,33 +241,51 @@
   padding-left: 0;
 }
 
-/* Footer seats: additive actions stack above Settings. Each occupant owns its
-   button geometry and hover chrome. */
+/* Footer seats: additive actions stack above Settings. The action list is a
+   grid so registrants cannot turn sibling entries into horizontal flex columns
+   through their own flex-basis, wrapping, or direction rules. Each occupant
+   still owns its control geometry and hover chrome. */
 .footArea {
   flex: none;
   display: flex;
   flex-direction: column;
 }
 
-.settingsArea,
-.footerActions {
+.settingsArea {
   flex: none;
   min-width: 0;
   width: 100%;
 }
 
 .footerActions {
-  display: flex;
+  flex: none;
+  min-width: 0;
+  width: 100%;
+  display: grid;
+  grid-auto-flow: row;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+}
+
+.footerActions > * {
+  min-width: 0;
+  max-width: 100%;
 }
 
 .collapsed .footArea {
   align-items: center;
 }
 
-.collapsed .settingsArea,
-.collapsed .footerActions {
+.collapsed .settingsArea {
   display: flex;
   justify-content: center;
+  width: auto;
+}
+
+.collapsed .footerActions {
+  display: grid;
+  grid-template-columns: 36px;
+  justify-items: center;
   width: auto;
 }
 

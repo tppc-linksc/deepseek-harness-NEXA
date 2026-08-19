@@ -14,12 +14,12 @@ export type PluginsSettingsLocaleKey =
 
 /** English copy. */
 export const en: Record<PluginsSettingsLocaleKey, string> = {
-  nav: 'Plugins',
-  title: 'Plugins',
-  intro: 'Configure and inspect the plugins installed in this deployment.',
-  tabs: 'Plugin views',
-  configurableTab: 'Plugin configuration',
-  empty: 'This deployment exposes no plugin settings.',
+  nav: 'Runtime components',
+  title: 'Runtime components',
+  intro: 'Inspect the internal components loaded by this Harness/Cordis runtime and manage the settings they expose.',
+  tabs: 'Runtime component views',
+  configurableTab: 'Component settings',
+  empty: 'This runtime exposes no component settings.',
   overridden: 'Overridden',
   reset: 'Reset to default',
   readOnly: 'This deployment stores settings read-only.',
@@ -55,12 +55,12 @@ export const en: Record<PluginsSettingsLocaleKey, string> = {
 
 /** Simplified Chinese copy. */
 export const zh: Record<PluginsSettingsLocaleKey, string> = {
-  nav: '插件',
-  title: '插件',
-  intro: '配置和查看本部署已安装的插件。',
-  tabs: '插件视图',
-  configurableTab: '插件配置',
-  empty: '本部署没有开放任何插件设置。',
+  nav: '运行组件',
+  title: '运行组件',
+  intro: '查看当前 Harness/Cordis 运行时加载的内部组件，并管理它们开放的设置。',
+  tabs: '运行组件视图',
+  configurableTab: '组件设置',
+  empty: '当前运行时没有开放任何组件设置。',
   overridden: '已覆盖',
   reset: '恢复默认',
   readOnly: '本部署的设置为只读。',

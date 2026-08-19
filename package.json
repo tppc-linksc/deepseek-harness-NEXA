@@ -28,6 +28,7 @@
     "package:desktop:mac": "pnpm run build && pnpm --filter @deepseek-ai/dsh-desktop package -- --target mac --arch arm64",
     "package:desktop:win": "pnpm run build && pnpm --filter @deepseek-ai/dsh-desktop package -- --target win --arch x64",
     "package:desktop:linux": "pnpm run build && pnpm --filter @deepseek-ai/dsh-desktop package -- --target linux --arch x64",
+    "release:desktop:manifest": "tsx scripts/create-desktop-release-manifest.ts",
     "clean": "tsx scripts/clean.ts",
     "change-scope": "tsx scripts/change-scope.ts",
     "typecheck": "npm run build:lib:host && npm run typecheck:contracts-ready",

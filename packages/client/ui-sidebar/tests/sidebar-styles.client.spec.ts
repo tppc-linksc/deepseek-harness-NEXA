@@ -63,4 +63,15 @@ describe('SidebarRoot.module.css', () => {
     expect(declarations('.collapsed .newSession')?.get('align-self')).toBe('flex-start')
     expect(declarations('.collapsed .newSession')?.get('width')).toBe('36px')
   })
+
+  it('stacks additive footer actions independently of registrant flex rules', () => {
+    expect(declarations('.footerActions')?.get('display')).toBe('grid')
+    expect(declarations('.footerActions')?.get('grid-auto-flow')).toBe('row')
+    expect(declarations('.footerActions')?.get('grid-template-columns')).toBe('minmax(0, 1fr)')
+    expect(declarations('.footerActions > *')?.get('min-width')).toBe('0')
+    expect(declarations('.footerActions > *')?.get('max-width')).toBe('100%')
+    expect(declarations('.collapsed .footerActions')?.get('display')).toBe('grid')
+    expect(declarations('.collapsed .footerActions')?.get('grid-template-columns')).toBe('36px')
+    expect(declarations('.collapsed .footerActions')?.get('justify-items')).toBe('center')
+  })
 })

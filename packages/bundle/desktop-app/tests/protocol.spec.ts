@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { desktopSurfacePrompt } from '../src/index.ts'
 import {
   DESKTOP_ORIGIN,
+  DESKTOP_REQUEST_METHODS,
   parseDesktopHostMessage,
   parseDesktopMainMessage,
 } from '../src/protocol.ts'
@@ -34,7 +35,19 @@ describe('desktop utility-process protocol', () => {
     expect(message.body).not.toBe(body)
   })
 
-  it('rejects another origin, unsupported methods, malformed ids, and non-byte bodies', () => {
+  it('carries ordinary Fetch methods used by extension-owned HTTP routes', () => {
+    for (const method of DESKTOP_REQUEST_METHODS) {
+      expect(parseDesktopMainMessage({
+        type: 'request',
+        id: `request-${method}`,
+        url: `${DESKTOP_ORIGIN}/api/test`,
+        method: method.toLowerCase(),
+        headers: [],
+      })).toMatchObject({ method })
+    }
+  })
+
+  it('rejects another origin, forbidden methods, malformed ids, and non-byte bodies', () => {
     const request = {
       type: 'request',
       id: 'request-1',
@@ -44,7 +57,9 @@ describe('desktop utility-process protocol', () => {
     }
     expect(() => parseDesktopMainMessage({ ...request, url: 'https://example.com/api/test' }))
       .toThrow('rejected request authority')
-    expect(() => parseDesktopMainMessage({ ...request, method: 'DELETE' }))
+    expect(() => parseDesktopMainMessage({ ...request, method: 'CONNECT' }))
+      .toThrow('rejected request method')
+    expect(() => parseDesktopMainMessage({ ...request, method: 'TRACE' }))
       .toThrow('rejected request method')
     expect(() => parseDesktopMainMessage({ ...request, id: '' })).toThrow('1 to 128')
     expect(() => parseDesktopMainMessage({ ...request, body: [1, 2, 3] })).toThrow('must be bytes')

@@ -1,0 +1,6 @@
+# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
+# side as of the last confirmed-consistent state. Both languages carry equal authority;
+# after editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-08-18-portless-desktop-community-market.md
+2026-08-18-portless-desktop-community-market.md: 39245449dfd2513affe7797656f3f8e71f6ba7b9
+2026-08-18-portless-desktop-community-market.zh.md: d651d73e61ebd59e0e39325e23d121dda3cdd2f3

@@ -8,6 +8,7 @@
 
 import { pathToFileURL } from 'node:url'
 import { readFileSync } from 'node:fs'
+import { createRequire } from 'node:module'
 import { parseEnv } from 'node:util'
 import { basename, dirname, isAbsolute, resolve } from 'node:path'
 import * as yaml from 'js-yaml'
@@ -489,19 +490,30 @@ export async function mountRootInclude(
   patches: readonly PatchOptions[] = [],
   bareModuleBaseUrl?: string,
 ): Promise<Entry | undefined> {
-  ctx.loader.builtins.include = bareModuleBaseUrl === undefined
-    ? Include
-    : class HostResolvedRootInclude extends Include {
-      override import(name: string, getOuterStack?: () => string[]): unknown {
-        const specifier = isAbsolute(name) ? pathToFileURL(name).href : name
-        if (name.startsWith('.') || name.startsWith('cordis:')) return super.import(specifier, getOuterStack)
-        const internal = this.ctx.loader.internal
-        /* v8 ignore next -- Node supplies the internal loader; this preserves the
-           original diagnostic for hypothetical embedders without it. */
-        if (internal === undefined) return super.import(specifier, getOuterStack)
-        return internal.import(specifier, bareModuleBaseUrl, {})
+  ctx.loader.builtins.include = class RootInclude extends Include {
+    override import(name: string, getOuterStack?: () => string[]): unknown {
+      const specifier = isAbsolute(name) ? pathToFileURL(name).href : name
+      if (name.startsWith('.') || name.startsWith('cordis:')) return super.import(specifier, getOuterStack)
+      const internal = this.ctx.loader.internal
+      if (internal !== undefined) {
+        return bareModuleBaseUrl === undefined
+          ? super.import(specifier, getOuterStack)
+          : internal.import(specifier, bareModuleBaseUrl, {})
+      }
+      const baseUrl = bareModuleBaseUrl ?? this.ctx.baseUrl
+      if (baseUrl === undefined) return super.import(specifier, getOuterStack)
+      try {
+        return super.import(pathToFileURL(createRequire(baseUrl).resolve(name)).href, getOuterStack)
+      } catch (error) {
+        if (bareModuleBaseUrl !== undefined || (error as NodeJS.ErrnoException).code !== 'MODULE_NOT_FOUND') {
+          throw error
+        }
+        // Packaged Electron can resolve installation-owned packages from the
+        // app archive even when createRequire cannot traverse profile symlinks into it.
+        return super.import(specifier, getOuterStack)
       }
     }
+  }
   // `cordis:group` alongside it: a group row is how a composition gives one
   // `isolate` realm to a provider and its consumers together, and an agent
   // preset living outside this workspace cannot resolve `@deepseek-ai/cordis-plugin-group`

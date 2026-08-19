@@ -303,6 +303,7 @@ const subsystemGroups = [
     ['schedule.md', '定时提醒', 'Scheduled reminders'],
   ]],
   ['平台与接入', 'Platform and access', [
+    ['desktop.md', '桌面应用', 'Desktop application'],
     ['web-server.md', 'HTTP 服务器', 'HTTP server'],
     ['typert.md', 'Typert', 'Typert'],
     ['client-modules.md', '客户端模块', 'Client modules'],

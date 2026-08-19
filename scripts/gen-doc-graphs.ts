@@ -514,6 +514,20 @@ const SERVICE_ROLES: ServiceRole[] = [
     note: 'Plain node:http carrier: named-route registry, index transform taps, and the static dist fallback; web-transport plugins register their own routes.',
   },
   {
+    key: 'desktopProfiles',
+    pkg: 'desktop-app',
+    title: 'Desktop profile identity',
+    mode: 'core',
+    note: 'Publishes the immutable desktop profile name and directory to desktop-aware plugins inside the isolated Electron Host.',
+  },
+  {
+    key: 'desktopPnpm',
+    pkg: 'desktop-app',
+    title: 'Desktop package operations',
+    mode: 'core',
+    note: 'Runs packaged pnpm and official dsh plugin operations through one managed subprocess tree against the isolated desktop profile.',
+  },
+  {
     key: 'clientModules',
     pkg: 'modules',
     title: 'Client plugin graph host',

@@ -8,6 +8,10 @@ export const DESKTOP_SCHEME = 'dsh'
 export const DESKTOP_ORIGIN = `${DESKTOP_SCHEME}://app`
 /** Maximum request body copied across the utility-process channel. */
 export const DESKTOP_MAX_REQUEST_BODY_BYTES = 160 * 1024 * 1024
+/** Fetch methods carried from the private renderer origin to registered routes. */
+export const DESKTOP_REQUEST_METHODS = [
+  'DELETE', 'GET', 'HEAD', 'OPTIONS', 'PATCH', 'POST', 'PUT',
+] as const
 
 /**
  * Test whether a URL belongs to the desktop renderer authority.
@@ -101,7 +105,9 @@ export function parseDesktopMainMessage(value: unknown): DesktopMainMessage {
   const parsed = new URL(url)
   if (!isDesktopUrl(parsed)) throw new Error(`desktop bridge: rejected request authority ${JSON.stringify(parsed.host)}`)
   const method = stringField(record, 'method').toUpperCase()
-  if (!['GET', 'HEAD', 'POST'].includes(method)) throw new Error(`desktop bridge: rejected request method ${JSON.stringify(method)}`)
+  if (!(DESKTOP_REQUEST_METHODS as readonly string[]).includes(method)) {
+    throw new Error(`desktop bridge: rejected request method ${JSON.stringify(method)}`)
+  }
   const headers = headerPairs(record.headers)
   const body = record.body === undefined ? undefined : bytes(record.body, 'request body')
   if (body !== undefined && body.byteLength > DESKTOP_MAX_REQUEST_BODY_BYTES) {

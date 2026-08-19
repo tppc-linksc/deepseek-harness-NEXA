@@ -169,7 +169,7 @@ function buildConfiguration(
   target: DesktopTarget,
   arch: DesktopArch,
 ): Configuration {
-  const artifactName = `DeepSeek-Harness-${manifest.version}-${target}-${arch}.\${ext}`
+  const artifactName = `DeepSeek-NEXA-${manifest.version}-${target}-${arch}.\${ext}`
   return {
     appId: 'ai.deepseek.harness',
     productName: 'DeepSeek Harness',

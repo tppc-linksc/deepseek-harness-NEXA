@@ -1,0 +1,75 @@
+name: Official Harness update monitor
+
+on:
+  schedule:
+    - cron: '23 1 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: official-harness-update-monitor
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Resolve latest official release
+        id: upstream
+        shell: bash
+        run: |
+          LATEST_TAG=$(git ls-remote --tags --refs https://github.com/deepseek-ai/deepseek-harness.git 'dsh-v*' \
+            | awk '{sub("refs/tags/", "", $2); print $2}' \
+            | sort -V \
+            | tail -n 1)
+          if [[ ! "$LATEST_TAG" =~ ^dsh-v[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]]; then
+            echo "Could not resolve a valid official release tag" >&2
+            exit 1
+          fi
+          git remote add official https://github.com/deepseek-ai/deepseek-harness.git
+          git fetch --no-tags --depth=1 official "refs/tags/$LATEST_TAG:refs/tags/$LATEST_TAG"
+          LATEST_COMMIT=$(git rev-list -n 1 "$LATEST_TAG")
+          CURRENT_TAG=$(node -p "JSON.parse(require('fs').readFileSync('.nexa/upstream.json', 'utf8')).tag")
+          CURRENT_COMMIT=$(node -p "JSON.parse(require('fs').readFileSync('.nexa/upstream.json', 'utf8')).commit")
+          echo "latest_tag=$LATEST_TAG" >> "$GITHUB_OUTPUT"
+          echo "latest_commit=$LATEST_COMMIT" >> "$GITHUB_OUTPUT"
+          echo "current_tag=$CURRENT_TAG" >> "$GITHUB_OUTPUT"
+          echo "current_commit=$CURRENT_COMMIT" >> "$GITHUB_OUTPUT"
+          if [[ "$LATEST_TAG" != "$CURRENT_TAG" || "$LATEST_COMMIT" != "$CURRENT_COMMIT" ]]; then
+            echo "update_available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "update_available=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Open maintainer update issue
+        if: steps.upstream.outputs.update_available == 'true'
+        shell: bash
+        env:
+          LATEST_TAG: ${{ steps.upstream.outputs.latest_tag }}
+          LATEST_COMMIT: ${{ steps.upstream.outputs.latest_commit }}
+          CURRENT_TAG: ${{ steps.upstream.outputs.current_tag }}
+          CURRENT_COMMIT: ${{ steps.upstream.outputs.current_commit }}
+        run: |
+          TITLE="同步官方 Harness $LATEST_TAG"
+          EXISTING=$(gh issue list --state open --search "\"$TITLE\" in:title" --json number --jq 'length')
+          if [[ "$EXISTING" != "0" ]]; then
+            exit 0
+          fi
+          BODY=$(printf '%s\n\n%s\n%s\n\n%s\n%s\n\n%s\n' \
+            '检测到新的官方 DeepSeek Harness 发布。此工作流不会自动合并或发布代码。' \
+            "- 当前基线：\`$CURRENT_TAG\`（\`$CURRENT_COMMIT\`）" \
+            "- 最新上游：\`$LATEST_TAG\`（\`$LATEST_COMMIT\`）" \
+            '请先审阅官方变更并同步分支，再更新 `.nexa/upstream.json`、桌面版本与双语发布说明。' \
+            "https://github.com/deepseek-ai/deepseek-harness/releases/tag/$LATEST_TAG" \
+            '_由 Official Harness update monitor 自动创建。_')
+          gh issue create --title "$TITLE" --body "$BODY"

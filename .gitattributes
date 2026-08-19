@@ -8,6 +8,10 @@
 
 *.pdf binary
 
+# Unified diffs encode context with a leading space, which can be followed by
+# the target file's tab indentation or stand alone for an empty context line.
+patches/*.patch whitespace=-trailing-space,-space-before-tab
+
 # Pairing records are generated from the three confirmed owner-blob pairs.
 # The worktree-local installer registers the fail-closed driver command.
 *.i18n.yaml merge=dsh-translation-pairing

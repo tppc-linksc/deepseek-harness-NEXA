@@ -12,6 +12,24 @@ export interface DesktopPaths {
   readonly agents: string
   /** Directory receiving utility-process output. */
   readonly logs: string
+  /** Directory containing desktop update preferences and verified installers. */
+  readonly updates: string
+  /** Directory containing the immutable active desktop profile. */
+  readonly profile: string
+  /** Private directory containing Electron-backed Node and pnpm launchers. */
+  readonly commandRuntime: string
+}
+
+/** Executable paths owned by the Electron launcher for one Host generation. */
+export interface DesktopHostRuntime {
+  /** Electron application executable reused through RunAsNode. */
+  readonly appExecutable: string
+  /** Physical JavaScript entry for the packaged DSH CLI. */
+  readonly dshBin: string
+  /** Physical JavaScript entry for the packaged pnpm release. */
+  readonly pnpmBin: string
+  /** Electron version used to install compatible native dependencies. */
+  readonly electronVersion: string
 }
 
 /**
@@ -27,6 +45,9 @@ export function resolveDesktopPaths(appData: string): DesktopPaths {
     runtime,
     agents: join(runtime, 'agents'),
     logs: join(userData, 'logs'),
+    updates: join(userData, 'updates'),
+    profile: join(runtime, 'profiles', 'desktop'),
+    commandRuntime: join(userData, 'commands'),
   }
 }
 
@@ -34,9 +55,14 @@ export function resolveDesktopPaths(appData: string): DesktopPaths {
  * Build the utility-process environment with desktop-owned writable roots.
  * @param source - Electron main's inherited environment.
  * @param paths - resolved desktop runtime paths.
+ * @param runtime - launcher-owned executable entries for package operations.
  * @returns a fresh environment for the Harness utility process.
  */
-export function desktopHostEnvironment(source: NodeJS.ProcessEnv, paths: DesktopPaths): Record<string, string> {
+export function desktopHostEnvironment(
+  source: NodeJS.ProcessEnv,
+  paths: DesktopPaths,
+  runtime: DesktopHostRuntime,
+): Record<string, string> {
   const environment = Object.fromEntries(
     Object.entries(source).filter((entry): entry is [string, string] => entry[1] !== undefined),
   )
@@ -49,5 +75,11 @@ export function desktopHostEnvironment(source: NodeJS.ProcessEnv, paths: Desktop
   // Electron intentionally rejects --expose-internals in packaged apps, so
   // Cordis configuration HMR cannot run in the distributed UtilityProcess.
   environment.DSH_DESKTOP_HOST = '1'
+  environment.DSH_DESKTOP_PROFILE_DIR = paths.profile
+  environment.DSH_DESKTOP_COMMAND_RUNTIME = paths.commandRuntime
+  environment.DSH_DESKTOP_APP_EXECUTABLE = runtime.appExecutable
+  environment.DSH_DESKTOP_CLI_BIN = runtime.dshBin
+  environment.DSH_DESKTOP_PNPM_BIN = runtime.pnpmBin
+  environment.DSH_DESKTOP_ELECTRON_VERSION = runtime.electronVersion
   return environment
 }

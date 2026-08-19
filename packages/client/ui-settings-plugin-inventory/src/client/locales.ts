@@ -2,14 +2,14 @@
 
 /** Simplified Chinese dictionary and key source of truth. */
 export const zh = {
-  tab: '插件列表',
-  loading: '正在读取插件…',
-  error: '暂时无法读取插件。',
+  tab: '组件清单',
+  loading: '正在读取运行组件…',
+  error: '暂时无法读取运行组件。',
   retry: '重试',
-  search: '搜索插件',
-  catalog: '插件列表',
-  empty: '暂无插件。',
-  emptySearch: '没有匹配的插件。',
+  search: '搜索运行组件',
+  catalog: '运行组件清单',
+  empty: '暂无运行组件。',
+  emptySearch: '没有匹配的运行组件。',
   enabledTag: '已启用',
   disabledTag: '已停用',
   configuration: '配置状态',
@@ -27,14 +27,14 @@ export type PluginInventoryLocaleKey = keyof typeof zh
 
 /** English dictionary checked against the Chinese key set. */
 export const en = {
-  tab: 'Plugin list',
-  loading: 'Reading plugins…',
-  error: 'Plugins are temporarily unavailable.',
+  tab: 'Component list',
+  loading: 'Reading runtime components…',
+  error: 'Runtime components are temporarily unavailable.',
   retry: 'Retry',
-  search: 'Search plugins',
-  catalog: 'Plugin list',
-  empty: 'No plugins are available.',
-  emptySearch: 'No matching plugins.',
+  search: 'Search runtime components',
+  catalog: 'Runtime component list',
+  empty: 'No runtime components are available.',
+  emptySearch: 'No matching runtime components.',
   enabledTag: 'Enabled',
   disabledTag: 'Disabled',
   configuration: 'Configuration',
