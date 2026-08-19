@@ -18,7 +18,7 @@ English | [中文](index.zh.md)
 <h2 id="nexa-hero-title">The full Harness.<br><em>Now, it is an app.</em></h2>
 <p class="nexa-hero-lead">The official Web UI, plugin system, and agent runtime enter the desktop intact.<br>No extra terminal and no local Web service.</p>
 <div class="nexa-actions"><a class="nexa-button nexa-button-primary" href="#download">Download free</a><a class="nexa-button nexa-button-link" href="https://github.com/tppc-linksc/deepseek-harness-NEXA">View on GitHub <span aria-hidden="true">↗</span></a></div>
-<p class="nexa-availability">Available for macOS, Windows, and Linux · 0.1.0-rc.5</p>
+<p class="nexa-availability">Available for macOS, Windows, and Linux · 0.1.0-rc.6</p>
 </div>
 
 <div class="nexa-product-stage" aria-label="DeepSeek Harness desktop app interface illustration">
@@ -48,13 +48,13 @@ English | [中文](index.zh.md)
 </section>
 
 <section id="download" class="nexa-downloads" aria-labelledby="nexa-download-title">
-<div class="nexa-download-intro"><p class="nexa-section-label">Download free</p><h2 id="nexa-download-title">Choose your system.<br>Open something new.</h2><p>Current release 0.1.0-rc.5. Installers are served by GitHub Releases.</p></div>
+<div class="nexa-download-intro"><p class="nexa-section-label">Download free</p><h2 id="nexa-download-title">Choose your system.<br>Open something new.</h2><p>Current release 0.1.0-rc.6. Installers are served by GitHub Releases.</p></div>
 <div class="nexa-download-list">
-<a href="https://github.com/tppc-linksc/deepseek-harness-NEXA/releases/download/desktop-v0.1.0-rc.5/DeepSeek-Harness-0.1.0-rc.5-mac-arm64.dmg"><span class="nexa-platform-icon nexa-platform-icon-apple" aria-hidden="true"></span><span><strong>macOS</strong><small>Apple Silicon · DMG</small></span><b>Download <i aria-hidden="true">↓</i></b></a>
-<a href="https://github.com/tppc-linksc/deepseek-harness-NEXA/releases/download/desktop-v0.1.0-rc.5/DeepSeek-Harness-0.1.0-rc.5-win-x64.exe"><span class="nexa-platform-icon nexa-platform-icon-windows" aria-hidden="true"></span><span><strong>Windows</strong><small>Windows 10+ · x64 · EXE</small></span><b>Download <i aria-hidden="true">↓</i></b></a>
-<a href="https://github.com/tppc-linksc/deepseek-harness-NEXA/releases/download/desktop-v0.1.0-rc.5/DeepSeek-Harness-0.1.0-rc.5-linux-x64.AppImage"><span class="nexa-platform-icon nexa-platform-icon-linux" aria-hidden="true"></span><span><strong>Linux</strong><small>x86_64 · AppImage</small></span><b>Download <i aria-hidden="true">↓</i></b></a>
+<a href="https://github.com/tppc-linksc/deepseek-harness-NEXA/releases/download/nexa-v0.1.0-rc.6/DeepSeek-NEXA-0.1.0-rc.6-mac-arm64.dmg"><span class="nexa-platform-icon nexa-platform-icon-apple" aria-hidden="true"></span><span><strong>macOS</strong><small>Apple Silicon · DMG</small></span><b>Download <i aria-hidden="true">↓</i></b></a>
+<a href="https://github.com/tppc-linksc/deepseek-harness-NEXA/releases/download/nexa-v0.1.0-rc.6/DeepSeek-NEXA-0.1.0-rc.6-win-x64.exe"><span class="nexa-platform-icon nexa-platform-icon-windows" aria-hidden="true"></span><span><strong>Windows</strong><small>Windows 10+ · x64 · EXE</small></span><b>Download <i aria-hidden="true">↓</i></b></a>
+<a href="https://github.com/tppc-linksc/deepseek-harness-NEXA/releases/download/nexa-v0.1.0-rc.6/DeepSeek-NEXA-0.1.0-rc.6-linux-x64.AppImage"><span class="nexa-platform-icon nexa-platform-icon-linux" aria-hidden="true"></span><span><strong>Linux</strong><small>x86_64 · AppImage</small></span><b>Download <i aria-hidden="true">↓</i></b></a>
 </div>
-<p class="nexa-signing-note">The macOS and Windows builds are not commercially code-signed, so the operating system may show a security prompt on first launch. <a href="https://github.com/tppc-linksc/deepseek-harness-NEXA/releases/tag/desktop-v0.1.0-rc.5">Release notes</a><span>·</span><a href="https://github.com/tppc-linksc/deepseek-harness-NEXA/releases/download/desktop-v0.1.0-rc.5/SHA256SUMS.txt">SHA-256 checksums</a></p>
+<p class="nexa-signing-note">The macOS and Windows builds are not commercially code-signed, so the operating system may show a security prompt on first launch. <a href="https://github.com/tppc-linksc/deepseek-harness-NEXA/releases/tag/nexa-v0.1.0-rc.6">Release notes</a><span>·</span><a href="https://github.com/tppc-linksc/deepseek-harness-NEXA/releases/download/nexa-v0.1.0-rc.6/SHA256SUMS.txt">SHA-256 checksums</a></p>
 </section>
 
 <section class="nexa-source" aria-labelledby="nexa-source-title"><div><p class="nexa-section-label">From source</p><h2 id="nexa-source-title">Two commands to open the desktop edition.</h2><p>Clone this fork and install the Node.js and pnpm versions supported by the repository.</p></div><pre aria-label="Run from source commands"><code><span>$</span> pnpm install
