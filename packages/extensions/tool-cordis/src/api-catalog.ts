@@ -1099,6 +1099,49 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
     ],
   },
   {
+    key: 'remoteControl',
+    summary: 'Host-owned remote connection, pairing state, and typed settings actions.',
+    description: 'Host-owned remote connection, pairing state, and typed settings actions.',
+    methods: [
+      {
+        signature: '@Remote(\'state\') state(): RemoteControlState',
+        description: 'Project the current control plane without private key material.',
+        parameters: [],
+        returns: 'current browser-safe connection, pairing, and device state.',
+      },
+      {
+        signature: '@Remote(\'configure\') async configure(request: RemoteControlConfigureRequest): Promise<RemoteControlState>',
+        description: 'Persist preferences and restart the Relay connection.',
+        parameters: [{ name: 'request', description: 'complete replacement preference set from settings.' }],
+        returns: 'state after the restart attempt settles.',
+      },
+      {
+        signature: '@Remote(\'reconnect\') async reconnect(): Promise<RemoteControlState>',
+        description: 'Retry the currently configured Relay immediately.',
+        parameters: [],
+        returns: 'state after an explicit Relay reconnection attempt settles.',
+      },
+      {
+        signature: '@Remote(\'openPairing\') async openPairing(): Promise<RemoteControlPairingOffer>',
+        description: 'Open a computer-side pairing window for the configured name.',
+        parameters: [],
+        returns: 'expiring Mini Program payload and rendered QR data URL.',
+      },
+      {
+        signature: '@Remote(\'confirmPairing\') confirmPairing(): RemoteControlState',
+        description: 'Accept the phone proposal currently visible to the user.',
+        parameters: [],
+        returns: 'state after confirming the currently pending phone proposal.',
+      },
+      {
+        signature: '@Remote(\'revoke\') revoke(request: RemoteControlRevokeRequest): RemoteControlState',
+        description: 'Revoke one known phone and persist the invalidated peer.',
+        parameters: [{ name: 'request', description: 'device identity selected in settings.' }],
+        returns: 'state containing the revoked device marker.',
+      },
+    ],
+  },
+  {
     key: 'sandbox',
     summary: 'Abstract process-sandbox service.',
     description: 'Abstract process-sandbox service. confine must return enforcing argv or fail closed at wrap or runner-execution time; silent unconfined passthrough is forbidden. Functional probes arbitrate multi-runner chains and may be skipped for a sole candidate, whose own refusal remains the fail-closed end.',
@@ -3744,6 +3787,34 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'RedactedSecret',
     declaration: 'export interface RedactedSecret {\n    path: string[];\n    set: boolean;\n}',
+  },
+  {
+    name: 'RemoteControlConfigureRequest',
+    declaration: 'export interface RemoteControlConfigureRequest {\n    enabled: boolean;\n    relayUrl: string;\n    computerName: string;\n}',
+  },
+  {
+    name: 'RemoteControlDevice',
+    declaration: 'export interface RemoteControlDevice {\n    deviceId: string;\n    pairedAt: number;\n    revoked: boolean;\n}',
+  },
+  {
+    name: 'RemoteControlPairingOffer',
+    declaration: 'export interface RemoteControlPairingOffer {\n    qrDataUrl: string;\n    payload: string;\n    fingerprint: string;\n    computerName: string;\n    expiresAt: number;\n}',
+  },
+  {
+    name: 'RemoteControlPhase',
+    declaration: 'export type RemoteControlPhase = \'connected\' | \'connecting\' | \'disabled\' | \'disconnected\' | \'error\';',
+  },
+  {
+    name: 'RemoteControlPreferences',
+    declaration: 'export interface RemoteControlPreferences {\n    enabled: boolean;\n    relayUrl: string;\n    computerName: string;\n}',
+  },
+  {
+    name: 'RemoteControlRevokeRequest',
+    declaration: 'export interface RemoteControlRevokeRequest {\n    deviceId: string;\n}',
+  },
+  {
+    name: 'RemoteControlState',
+    declaration: 'export interface RemoteControlState {\n    phase: RemoteControlPhase;\n    preferences: RemoteControlPreferences;\n    computerId: string;\n    pairedDevices: RemoteControlDevice[];\n    pendingDevice?: {\n        deviceId: string;\n        fingerprint: string;\n        expiresAt: number;\n    };\n    error?: string;\n}',
   },
   {
     name: 'ReplayEnvelope',

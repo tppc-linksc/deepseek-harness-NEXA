@@ -1,0 +1,49 @@
+/** Browser-safe values crossing the remoteControl Typert boundary. */
+
+/** Browser-visible lifecycle of the computer-to-Relay connection. */
+export type RemoteControlPhase = 'connected' | 'connecting' | 'disabled' | 'disconnected' | 'error'
+
+/** Persisted settings editable from the Remote Control section. */
+export interface RemoteControlPreferences {
+  enabled: boolean
+  relayUrl: string
+  computerName: string
+}
+
+/** Safe projection of one paired phone. */
+export interface RemoteControlDevice {
+  deviceId: string
+  pairedAt: number
+  revoked: boolean
+}
+
+/** Browser-safe snapshot returned by the Host control plane. */
+export interface RemoteControlState {
+  phase: RemoteControlPhase
+  preferences: RemoteControlPreferences
+  computerId: string
+  pairedDevices: RemoteControlDevice[]
+  pendingDevice?: { deviceId: string; fingerprint: string; expiresAt: number }
+  error?: string
+}
+
+/** Complete preference replacement accepted by the Host. */
+export interface RemoteControlConfigureRequest {
+  enabled: boolean
+  relayUrl: string
+  computerName: string
+}
+
+/** Expiring pairing material displayed in settings. */
+export interface RemoteControlPairingOffer {
+  qrDataUrl: string
+  payload: string
+  fingerprint: string
+  computerName: string
+  expiresAt: number
+}
+
+/** Device selector for an explicit revocation. */
+export interface RemoteControlRevokeRequest {
+  deviceId: string
+}

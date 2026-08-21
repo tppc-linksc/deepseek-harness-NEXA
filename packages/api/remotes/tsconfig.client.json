@@ -40,6 +40,9 @@
       "path": "../../feedback/message-feedback"
     },
     {
+      "path": "../../interaction/remote-control"
+    },
+    {
       "path": "../../host/plugin-inventory"
     },
     {

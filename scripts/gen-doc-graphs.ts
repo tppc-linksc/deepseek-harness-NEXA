@@ -434,6 +434,14 @@ const SERVICE_ROLES: ServiceRole[] = [
     note: 'One-shot permission decisions dispatched over the `approval/request` waterfall; answerers are listeners (the ACP bridge for its own agents), absence fails closed to `unavailable`.',
   },
   {
+    key: 'remoteControl',
+    pkg: 'remote-control',
+    title: 'NEXA remote-control bridge',
+    mode: 'core',
+    consumers: ['api-remotes'],
+    note: 'Owns the computer identity, encrypted Relay channel, pairing and revocation state, DSH command adapter, and the Typert control plane mounted by api-remotes.',
+  },
+  {
     key: 'permissionPresets',
     pkg: 'permission-presets',
     title: 'Permission presets',

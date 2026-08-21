@@ -1530,6 +1530,28 @@ Depends on: [`LocalConfig`](#deepseek-aidsh-pwsh-local)
 
 Source: [`packages/shell/pwsh-sandbox/src/index.ts:40`](../packages/shell/pwsh-sandbox/src/index.ts)
 
+<a id="deepseek-aidsh-remote-control"></a>
+
+## `@deepseek-ai/dsh-remote-control`
+
+Requires: `agents` · `apiProxy`
+
+```ts config-catalog
+/** Startup defaults and private-state location for the NEXA Remote Host bridge. */
+export interface Config {
+  /** Initial Relay connection switch when no persisted preference exists. */
+  enabled?: boolean
+  /** Initial Relay WebSocket endpoint when no persisted preference exists. */
+  relayUrl?: string
+  /** Initial computer name placed in pairing offers. */
+  computerName?: string
+  /** Private JSON file containing the computer identity, peers, and saved preferences. */
+  statePath: string
+}
+```
+
+Source: [`packages/interaction/remote-control/src/index.ts:38`](../packages/interaction/remote-control/src/index.ts)
+
 <a id="deepseek-aidsh-repeat-tool-reminder"></a>
 
 ## `@deepseek-ai/dsh-repeat-tool-reminder`
@@ -3189,6 +3211,7 @@ These load from a `cordis.yml` entry with no `config:` block; they declare no co
 - `@deepseek-ai/dsh-client-ui-permission-presets` ([`packages/client/ui-permission-presets/src/index.ts`](../packages/client/ui-permission-presets/src/index.ts))
 - `@deepseek-ai/dsh-client-ui-plan` ([`packages/client/ui-plan/src/index.ts`](../packages/client/ui-plan/src/index.ts))
 - `@deepseek-ai/dsh-client-ui-reference` ([`packages/client/ui-reference/src/index.ts`](../packages/client/ui-reference/src/index.ts))
+- `@deepseek-ai/dsh-client-ui-remote-control` ([`packages/client/ui-remote-control/src/index.ts`](../packages/client/ui-remote-control/src/index.ts))
 - `@deepseek-ai/dsh-client-ui-renderer` ([`packages/client/ui-renderer/src/index.ts`](../packages/client/ui-renderer/src/index.ts))
 - `@deepseek-ai/dsh-client-ui-settings` ([`packages/client/ui-settings/src/index.ts`](../packages/client/ui-settings/src/index.ts))
 - `@deepseek-ai/dsh-client-ui-settings-general` ([`packages/client/ui-settings-general/src/index.ts`](../packages/client/ui-settings-general/src/index.ts))
