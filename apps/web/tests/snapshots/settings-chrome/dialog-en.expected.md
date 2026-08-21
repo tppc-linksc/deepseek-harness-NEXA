@@ -4,12 +4,12 @@
     - button "General":
       - img
       - text: General
-    - button "Models":
+    - button "Model configuration":
       - img
-      - text: Models
-    - button "Plugins":
+      - text: Model configuration
+    - button "Runtime components":
       - img
-      - text: Plugins
+      - text: Runtime components
     - button "Agent presets":
       - img
       - text: Agent presets
