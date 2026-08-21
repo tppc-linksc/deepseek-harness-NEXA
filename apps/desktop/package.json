@@ -3,7 +3,7 @@
   "productName": "DeepSeek Harness",
   "description": "DeepSeek Harness desktop application",
   "author": "Unofficial DeepSeek Harness Desktop contributors",
-  "version": "0.1.0-rc.6",
+  "version": "0.1.0-rc.8",
   "publishConfig": {
     "access": "public"
   },
