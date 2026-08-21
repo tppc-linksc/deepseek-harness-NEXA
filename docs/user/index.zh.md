@@ -18,7 +18,7 @@ description: 完整保留 DeepSeek 官方 Harness Web UI 与 agent 运行时，�
 <h2 id="nexa-hero-title">完整的DeepSeek Harness<br><em>现在，不只是WebUI。</em></h2>
 <p class="nexa-hero-lead">官方 Web UI、插件系统与 agent 运行时完整进入桌面。<br>不需要额外终端，也不启动本地 Web 服务。</p>
 <div class="nexa-actions"><a class="nexa-button nexa-button-primary" href="#download">免费下载</a><a class="nexa-button nexa-button-link" href="https://github.com/tppc-linksc/deepseek-harness-NEXA">查看 GitHub <span aria-hidden="true">↗</span></a></div>
-<p class="nexa-availability">适用于 macOS、Windows 与 Linux · 0.1.0-rc.8</p>
+<p class="nexa-availability">适用于 macOS、Windows 与 Linux · 0.1.0-rc.9</p>
 </div>
 
 <div class="nexa-product-stage" aria-label="DeepSeek Harness 桌面 App 界面示意">
@@ -51,18 +51,18 @@ description: 完整保留 DeepSeek 官方 Harness Web UI 与 agent 运行时，�
 <div class="nexa-feature-intro"><p class="nexa-section-label">桌面增强</p><h2 id="nexa-desktop-features-title">扩展与更新，<br>都在 App 内完成。</h2><p>社区扩展的管理与桌面版本的维护各有清晰入口，不必离开 Harness 工作流。</p></div>
 <div class="nexa-feature-grid">
 <article class="nexa-feature-card nexa-extension-card"><div class="nexa-feature-heading"><span class="nexa-feature-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="2"></rect><rect x="14" y="3" width="7" height="7" rx="2"></rect><rect x="3" y="14" width="7" height="7" rx="2"></rect><rect x="14" y="14" width="7" height="7" rx="2"></rect></svg></span><div><small>社区扩展</small><h3>扩展中心</h3></div></div><p>在同一处发现、下载、安装、备份和管理社区扩展。已安装扩展与当前运行组件分别表达不同状态。</p><div class="nexa-extension-preview" aria-label="扩展中心界面示意"><div class="nexa-preview-tabs"><strong>发现</strong><span>已安装</span><span>备份</span></div><div class="nexa-extension-item"><span class="nexa-extension-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span><strong>用量与余额</strong><small>社区扩展</small></span><b>已安装</b></div></div></article>
-<article class="nexa-feature-card nexa-update-card"><div class="nexa-feature-heading"><span class="nexa-feature-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.34 5.66"></path><path d="M20 4v7h-7"></path></svg></span><div><small>桌面发行</small><h3>应用更新</h3></div></div><p>支持自动与手动检查。左下角提醒会在后台下载，完成后再由你决定何时退出并打开已校验的安装包。</p><div class="nexa-update-preview" aria-label="应用更新界面示意"><div><span>当前版本</span><strong>0.1.0-rc.8</strong></div><div><span>自动检查更新</span><i class="nexa-update-switch" aria-hidden="true"></i></div><div><button tabindex="-1">检查更新</button><small>当前已是最新版本</small></div></div></article>
+<article class="nexa-feature-card nexa-update-card"><div class="nexa-feature-heading"><span class="nexa-feature-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.34 5.66"></path><path d="M20 4v7h-7"></path></svg></span><div><small>桌面发行</small><h3>应用更新</h3></div></div><p>支持自动与手动检查。左下角提醒会在后台下载，完成后再由你决定何时退出并打开已校验的安装包。</p><div class="nexa-update-preview" aria-label="应用更新界面示意"><div><span>当前版本</span><strong>0.1.0-rc.9</strong></div><div><span>自动检查更新</span><i class="nexa-update-switch" aria-hidden="true"></i></div><div><button tabindex="-1">检查更新</button><small>当前已是最新版本</small></div></div></article>
 </div>
 </section>
 
 <section id="download" class="nexa-downloads" aria-labelledby="nexa-download-title">
-<div class="nexa-download-intro"><p class="nexa-section-label">免费下载</p><h2 id="nexa-download-title">选好系统。<br>打开新世界。</h2><p>当前版本 0.1.0-rc.8。安装包由 GitHub Releases 提供。</p></div>
+<div class="nexa-download-intro"><p class="nexa-section-label">免费下载</p><h2 id="nexa-download-title">选好系统。<br>打开新世界。</h2><p>当前版本 0.1.0-rc.9。安装包由 GitHub Releases 提供。</p></div>
 <div class="nexa-download-list">
-<a href="https://github.com/tppc-linksc/deepseek-harness-NEXA/releases/download/nexa-v0.1.0-rc.8/DeepSeek-NEXA-0.1.0-rc.8-mac-arm64.dmg"><span class="nexa-platform-icon nexa-platform-icon-apple" aria-hidden="true"></span><span><strong>macOS</strong><small>Apple Silicon · DMG</small></span><b>下载 <i aria-hidden="true">↓</i></b></a>
-<a href="https://github.com/tppc-linksc/deepseek-harness-NEXA/releases/download/nexa-v0.1.0-rc.8/DeepSeek-NEXA-0.1.0-rc.8-win-x64.exe"><span class="nexa-platform-icon nexa-platform-icon-windows" aria-hidden="true"></span><span><strong>Windows</strong><small>Windows 10+ · x64 · EXE</small></span><b>下载 <i aria-hidden="true">↓</i></b></a>
-<a href="https://github.com/tppc-linksc/deepseek-harness-NEXA/releases/download/nexa-v0.1.0-rc.8/DeepSeek-NEXA-0.1.0-rc.8-linux-x64.AppImage"><span class="nexa-platform-icon nexa-platform-icon-linux" aria-hidden="true"></span><span><strong>Linux</strong><small>x86_64 · AppImage</small></span><b>下载 <i aria-hidden="true">↓</i></b></a>
+<a href="https://github.com/tppc-linksc/deepseek-harness-NEXA/releases/download/nexa-v0.1.0-rc.9/DeepSeek-NEXA-0.1.0-rc.9-mac-arm64.dmg"><span class="nexa-platform-icon nexa-platform-icon-apple" aria-hidden="true"></span><span><strong>macOS</strong><small>Apple Silicon · DMG</small></span><b>下载 <i aria-hidden="true">↓</i></b></a>
+<a href="https://github.com/tppc-linksc/deepseek-harness-NEXA/releases/download/nexa-v0.1.0-rc.9/DeepSeek-NEXA-0.1.0-rc.9-win-x64.exe"><span class="nexa-platform-icon nexa-platform-icon-windows" aria-hidden="true"></span><span><strong>Windows</strong><small>Windows 10+ · x64 · EXE</small></span><b>下载 <i aria-hidden="true">↓</i></b></a>
+<a href="https://github.com/tppc-linksc/deepseek-harness-NEXA/releases/download/nexa-v0.1.0-rc.9/DeepSeek-NEXA-0.1.0-rc.9-linux-x64.AppImage"><span class="nexa-platform-icon nexa-platform-icon-linux" aria-hidden="true"></span><span><strong>Linux</strong><small>x86_64 · AppImage</small></span><b>下载 <i aria-hidden="true">↓</i></b></a>
 </div>
-<p class="nexa-signing-note">macOS 与 Windows 版本没有商业代码签名，首次启动可能出现系统安全提示。<a href="https://github.com/tppc-linksc/deepseek-harness-NEXA/releases/tag/nexa-v0.1.0-rc.8">查看发布说明</a><span>·</span><a href="https://github.com/tppc-linksc/deepseek-harness-NEXA/releases/download/nexa-v0.1.0-rc.8/SHA256SUMS.txt">SHA-256 校验</a></p>
+<p class="nexa-signing-note">macOS 与 Windows 版本没有商业代码签名，首次启动可能出现系统安全提示。<a href="https://github.com/tppc-linksc/deepseek-harness-NEXA/releases/tag/nexa-v0.1.0-rc.9">查看发布说明</a><span>·</span><a href="https://github.com/tppc-linksc/deepseek-harness-NEXA/releases/download/nexa-v0.1.0-rc.9/SHA256SUMS.txt">SHA-256 校验</a></p>
 </section>
 
 <section class="nexa-source" aria-labelledby="nexa-source-title"><div><p class="nexa-section-label">从源码运行</p><h2 id="nexa-source-title">两条命令，启动桌面版。</h2><p>克隆本 fork，并安装仓库支持的 Node.js 与 pnpm 版本。</p></div><pre aria-label="从源码运行指令"><code><span>$</span> pnpm install
