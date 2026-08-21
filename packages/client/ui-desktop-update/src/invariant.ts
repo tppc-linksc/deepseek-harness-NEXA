@@ -10,7 +10,10 @@ export const name = 'client-ui-desktop-update-invariant'
 /** Service required before package ownership can be reserved. */
 export const inject = ['invariants']
 
-/** Renderer state is validated at the private protocol response parser. */
+/**
+ * No runtime invariant: this is a browser-side settings projection; the
+ * private protocol parser validates every renderer-visible update state.
+ */
 const install: InvariantInstaller = () => {}
 
 /**

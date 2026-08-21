@@ -18,14 +18,18 @@ describe('validateDesktopNativePayload', () => {
     createFile(root, 'node_modules', 'node-pty', 'prebuilds', 'win32-x64', 'conpty', 'conpty.dll')
     createFile(root, 'node_modules', 'node-pty', 'prebuilds', 'win32-x64', 'conpty', 'OpenConsole.exe')
 
-    expect(() => validateDesktopNativePayload(root, 'win', 'x64')).not.toThrow()
+    expect(() => {
+      validateDesktopNativePayload(root, 'win', 'x64')
+    }).not.toThrow()
   })
 
   it('rejects the obsolete Windows pty.node layout', () => {
     const root = temporaryStaging()
     createFile(root, 'node_modules', 'node-pty', 'prebuilds', 'win32-x64', 'pty.node')
 
-    expect(() => validateDesktopNativePayload(root, 'win', 'x64')).toThrow(
+    expect(() => {
+      validateDesktopNativePayload(root, 'win', 'x64')
+    }).toThrow(
       'node-pty win32-x64 ConPTY addon is missing',
     )
   })
@@ -34,7 +38,9 @@ describe('validateDesktopNativePayload', () => {
     const root = temporaryStaging()
     createFile(root, 'node_modules', 'node-pty', 'prebuilds', 'win32-arm64', 'conpty.node')
 
-    expect(() => validateDesktopNativePayload(root, 'win', 'arm64')).toThrow(
+    expect(() => {
+      validateDesktopNativePayload(root, 'win', 'arm64')
+    }).toThrow(
       'node-pty win32-arm64 console-list addon is missing',
     )
   })
@@ -63,7 +69,9 @@ describe('validateDesktopNativePayload', () => {
     const root = temporaryStaging()
     createFile(root, 'node_modules', 'node-pty', ...segments)
 
-    expect(() => validateDesktopNativePayload(root, 'linux', 'x64')).not.toThrow()
+    expect(() => {
+      validateDesktopNativePayload(root, 'linux', 'x64')
+    }).not.toThrow()
   })
 })
 

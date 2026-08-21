@@ -1,9 +1,5 @@
 /** Validated release metadata shared by the desktop update manager and its tests. */
 
-/** Public release manifest downloaded by the desktop application. */
-export const DESKTOP_UPDATE_MANIFEST_URL =
-  'https://github.com/tppc-linksc/deepseek-harness-NEXA/releases/latest/download/stable.json'
-
 /** GitHub Releases feed used to discover both stable and prerelease desktop builds. */
 export const DESKTOP_UPDATE_RELEASES_URL =
   'https://api.github.com/repos/tppc-linksc/deepseek-harness-NEXA/releases?per_page=20'
@@ -63,7 +59,7 @@ export interface DesktopUpdateManifest {
 }
 
 /** Renderer-visible updater phases. */
-export type DesktopUpdatePhase =
+type DesktopUpdatePhase =
   | 'available'
   | 'checking'
   | 'downloaded'

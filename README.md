@@ -61,14 +61,18 @@ pnpm run package:desktop:current
 npx @deepseek-ai/dsh web
 ```
 
-也可以从当前源码构建并运行：
+该命令默认会在 `http://127.0.0.1:3080` 启动 Web UI，本机启动时还会用默认浏览器打开页面。通过 SSH 启动时只打印宿主机 URL，因为本地转发地址由 SSH 客户端或编辑器持有。传入 `--no-open` 可仅运行服务器而不打开浏览器。详见 [Web UI 指南](docs/user/guide/index.md)。
+
+### 从源码运行
+
+如需从仓库源码运行：
 
 ```sh
 pnpm run build
 pnpm dsh web
 ```
 
-Web UI 默认监听 `http://127.0.0.1:3080`。详见 [Web UI 指南](docs/user/guide/index.md)。
+`pnpm run build` 会准备仓库产物。`pnpm dsh web` 会直接使用这些已构建产物，不会重新构建。
 
 ## 社区与支持
 
