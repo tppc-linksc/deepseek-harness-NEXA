@@ -13,7 +13,7 @@
     { "path": "../ui-primitives" },
     { "path": "../ui-settings" },
     { "path": "../ui-slots" },
-    { "path": "../../interaction/remote-control" },
+    { "path": "../../interaction/qrcode-remote" },
     { "path": "../../runtime-diagnostics/invariants" }
   ]
 }

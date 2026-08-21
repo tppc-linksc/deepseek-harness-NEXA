@@ -10,7 +10,7 @@
 | [`user-approval/`](user-approval/README.md) | 协调一次性审批决策。 | `ctx.approval` |
 | [`permission/`](permission-presets/README.md) | 呈现并持久化面向用户的权限预设。 | `ctx.permissionPresets` |
 | [`user-questions/`](user-questions/README.md) | 定义与提供方无关的用户问答 seam。 | `ctx.userQuestions` |
-| [`remote-control/`](remote-control/README.md) | 把已配对的 NEXA Remote 手机接入 Host 会话与审批。 | `ctx.remoteControl` |
+| [`qrcode-remote/`](qrcode-remote/README.md) | 把已配对的 NEXA Remote 手机接入 Host 会话与审批。 | `ctx.remoteControl` |
 | [`tool-ask-user/`](tool-ask-user/README.md) | 向模型提供用户问题。 | （注册到 `ctx.tools`） |
 
 这些包通过现有的 agent 和会话约定集成，而不改变循环。交互式应用提供具体的命令、审批和提问适配器；自动化使用 [`acp/`](../acp/README.md)，可运行的演示组合包位于 [`examples/`](../examples/README.md)。产品 [`dsh`](../../apps/cli/README.md) CLI（命令行界面）直接组合这些包。

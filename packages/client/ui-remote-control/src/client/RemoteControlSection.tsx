@@ -1,6 +1,6 @@
 /** Dedicated Remote Control settings section. */
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { SnapshotStore } from '@deepseek-ai/dsh-client-runtime/client'
 import type { InjectFace, PropsLocale, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
 import { Button } from '@deepseek-ai/dsh-client-ui-primitives'
@@ -30,6 +30,7 @@ export function RemoteControlSection({
   const [enabled, setEnabled] = useState(view.state.preferences.enabled)
   const [relayUrl, setRelayUrl] = useState(view.state.preferences.relayUrl)
   const [computerName, setComputerName] = useState(view.state.preferences.computerName)
+  const autoPairingRequested = useRef(false)
 
   useEffect(() => { void load() }, [load])
   useEffect(() => {
@@ -45,6 +46,25 @@ export function RemoteControlSection({
     view.state.preferences.relayUrl,
     view.state.preferences.computerName,
   ])
+  useEffect(() => {
+    if (view.state.phase !== 'connected') {
+      autoPairingRequested.current = false
+      return
+    }
+    if (view.busy === 'configure' || view.busy === 'reconnect') {
+      autoPairingRequested.current = false
+      return
+    }
+    if (view.offer !== null || view.busy !== null || autoPairingRequested.current) return
+    autoPairingRequested.current = true
+    void openPairing()
+  }, [openPairing, view.busy, view.offer, view.state.phase])
+  useEffect(() => {
+    if (view.offer === null) return
+    const delay = Math.max(0, view.offer.expiresAt - Date.now() + 250)
+    const timer = window.setTimeout(() => { void openPairing() }, delay)
+    return () => { window.clearTimeout(timer) }
+  }, [openPairing, view.offer])
 
   const busy = view.busy !== null
   const phaseKey = `phase.${view.state.phase}` as RemoteControlLocaleKey
@@ -67,10 +87,12 @@ export function RemoteControlSection({
           <span>{t('enabled')}</span>
           <input type="checkbox" checked={enabled} onChange={(event) => { setEnabled(event.currentTarget.checked) }} />
         </label>
-        <label className={css.field}>
-          <span>{t('relay')}</span>
-          <input value={relayUrl} spellCheck={false} onChange={(event) => { setRelayUrl(event.currentTarget.value) }} />
-        </label>
+        {view.state.relayMode === 'custom' && (
+          <label className={css.field}>
+            <span>{t('relay')}</span>
+            <input value={relayUrl} spellCheck={false} onChange={(event) => { setRelayUrl(event.currentTarget.value) }} />
+          </label>
+        )}
         <label className={css.field}>
           <span>{t('computerName')}</span>
           <input value={computerName} maxLength={80} onChange={(event) => { setComputerName(event.currentTarget.value) }} />
@@ -94,7 +116,7 @@ export function RemoteControlSection({
       <div className={css.card}>
         <div className={css.cardHeading}>
           <div>
-            <h3>{t('generate')}</h3>
+            <h3>{t('pairTitle')}</h3>
             <p>{t('qrHint')}</p>
           </div>
           <Button
@@ -103,13 +125,16 @@ export function RemoteControlSection({
             disabled={busy || view.state.phase !== 'connected'}
             onClick={() => { void openPairing() }}
           >
-            {t('generate')}
+            {view.busy === 'openPairing'
+              ? t('generating')
+              : t(view.offer === null ? 'generate' : 'refresh')}
           </Button>
         </div>
         {view.offer !== null && (
           <div className={css.qrBlock}>
             <img src={view.offer.qrDataUrl} alt={t('generate')} width={280} height={280} />
             <div className={css.qrMeta}>
+              <strong>{t(view.offer.mode === 'miniprogram-code' ? 'directCode' : 'fallbackCode')}</strong>
               <span>{t('fingerprint')}</span>
               <strong>{view.offer.fingerprint}</strong>
               <span>{t('expires', { time: new Date(view.offer.expiresAt).toLocaleTimeString() })}</span>

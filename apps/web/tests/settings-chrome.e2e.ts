@@ -27,6 +27,9 @@ const PLUGINS_EXPECTED = join(SNAPSHOT_DIR, 'plugins.expected.md')
 // The English fallback surface: a browser naming no shipped language.
 const DIALOG_EN_EXPECTED = join(SNAPSHOT_DIR, 'dialog-en.expected.md')
 const PLUGIN_ROW_SELECTOR = '[data-plugin-entry$="ui-settings"]'
+// The assembled Web bundle nests rows under its Loader group, so the public
+// inventory entry id carries that path while the package/card name stays exact.
+const QRCODE_REMOTE_ROW_SELECTOR = '[data-plugin-entry$="qrcode-remote"]'
 const MODE = webSnapshotMode()
 
 describe('web e2e: settings modal and General preferences', () => {
@@ -96,6 +99,10 @@ describe('web e2e: settings modal and General preferences', () => {
     await dialog.getByRole('button', { name: '模型配置' }).click()
     await expect.poll(() => dialog.getByRole('button', { name: '模型配置' }).getAttribute('aria-current'), { timeout: 5_000 }).toBe('true')
     expect(await dialog.getByRole('button', { name: '通用设置' }).getAttribute('aria-current')).toBeNull()
+    // The browser contribution stays a dedicated settings destination while
+    // its Host capability is also projected in the Runtime component list.
+    await dialog.getByRole('button', { name: '远程操控', exact: true }).click()
+    await dialog.getByRole('heading', { name: '远程操控', exact: true }).waitFor({ timeout: 10_000 })
     // Runtime components is a read-only projection of the same assembled Loader tree.
     // Capture one stable shipped row rather than the whole inventory so adding
     // an unrelated plugin does not rewrite this surface's golden.
@@ -107,13 +114,22 @@ describe('web e2e: settings modal and General preferences', () => {
     const expectedPluginCount = [...scaffold.ctx.loader.entries()]
       .filter(entry => !entry.options.group)
       .length
-    expect(await dialog.getByRole('searchbox', { name: '搜索运行组件' }).count()).toBe(1)
+    const componentSearch = dialog.getByRole('searchbox', { name: '搜索运行组件' })
+    expect(await componentSearch.count()).toBe(1)
     expect(await dialog.locator('[data-plugin-entry]').count()).toBe(expectedPluginCount)
     expect(await dialog.locator('[data-plugin-count]').getAttribute('data-plugin-count'))
       .toBe(String(expectedPluginCount))
     expect(await dialog.getByRole('button', { name: '运行组件', exact: true }).getAttribute('aria-current')).toBe('true')
     expect(await dialog.getByRole('tab', { name: '组件清单', exact: true }).getAttribute('aria-selected')).toBe('true')
     expect(await dialog.getByRole('button', { name: '模型配置' }).getAttribute('aria-current')).toBeNull()
+    await componentSearch.fill('qrcode-remote')
+    const qrcodeRemoteRow = dialog.locator(QRCODE_REMOTE_ROW_SELECTOR)
+    await qrcodeRemoteRow.waitFor({ timeout: 10_000 })
+    expect(await qrcodeRemoteRow.getByRole('button', { name: /^qrcode-remote,/ }).count()).toBe(1)
+    expect(await dialog.locator('[data-plugin-entry]').count()).toBe(1)
+    await componentSearch.fill('')
+    await expect.poll(() => dialog.locator('[data-plugin-entry]').count(), { timeout: 5_000 })
+      .toBe(expectedPluginCount)
     const pluginsSnapshot = await captureStableAria(
       page,
       PLUGIN_ROW_SELECTOR,

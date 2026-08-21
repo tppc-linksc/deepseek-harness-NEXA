@@ -3798,7 +3798,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'RemoteControlPairingOffer',
-    declaration: 'export interface RemoteControlPairingOffer {\n    qrDataUrl: string;\n    payload: string;\n    fingerprint: string;\n    computerName: string;\n    expiresAt: number;\n}',
+    declaration: 'export interface RemoteControlPairingOffer {\n    qrDataUrl: string;\n    payload: string;\n    mode: \'miniprogram-code\' | \'fallback-qr\';\n    fallbackReason?: string;\n    fingerprint: string;\n    computerName: string;\n    expiresAt: number;\n}',
   },
   {
     name: 'RemoteControlPhase',
@@ -3814,7 +3814,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'RemoteControlState',
-    declaration: 'export interface RemoteControlState {\n    phase: RemoteControlPhase;\n    preferences: RemoteControlPreferences;\n    computerId: string;\n    pairedDevices: RemoteControlDevice[];\n    pendingDevice?: {\n        deviceId: string;\n        fingerprint: string;\n        expiresAt: number;\n    };\n    error?: string;\n}',
+    declaration: 'export interface RemoteControlState {\n    phase: RemoteControlPhase;\n    relayMode: \'managed\' | \'custom\';\n    preferences: RemoteControlPreferences;\n    computerId: string;\n    pairedDevices: RemoteControlDevice[];\n    pendingDevice?: {\n        deviceId: string;\n        fingerprint: string;\n        expiresAt: number;\n    };\n    error?: string;\n}',
   },
   {
     name: 'ReplayEnvelope',

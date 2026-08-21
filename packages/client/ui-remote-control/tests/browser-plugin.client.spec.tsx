@@ -1,12 +1,12 @@
 // @vitest-environment jsdom
 import { Context, Service } from '@deepseek-ai/cordis'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { LocaleRuntime } from '@deepseek-ai/dsh-client-locale/client'
 import { createSnapshotStore, SlotRegistry } from '@deepseek-ai/dsh-client-runtime/client'
 import { resolveSlotLabel } from '@deepseek-ai/dsh-client-ui-slots'
 import { bindSnapshotSelector, usePinnedBrowserLanguages } from '@deepseek-ai/dsh-client-test-runtime'
-import type { RemoteControlState } from '@deepseek-ai/dsh-remote-control/types'
+import type { RemoteControlState } from '@deepseek-ai/dsh-qrcode-remote/types'
 import { RemoteControlSection } from '../src/client/RemoteControlSection.tsx'
 import type {
   RemoteControlSectionInjected, RemoteControlSectionProps,
@@ -20,6 +20,7 @@ afterEach(cleanup)
 
 const DISABLED: RemoteControlState = {
   phase: 'disabled',
+  relayMode: 'custom',
   preferences: {
     enabled: false,
     relayUrl: 'wss://relay.example.com',
@@ -49,6 +50,7 @@ async function bench() {
     openPairing: vi.fn(() => success({
       qrDataUrl: 'data:image/png;base64,AA==',
       payload: 'NEXA:PAYLOAD',
+      mode: 'miniprogram-code' as const,
       fingerprint: 'ABCDEFGH',
       computerName: 'My computer',
       expiresAt: 1_900_000_000_000,
@@ -96,6 +98,7 @@ describe('ui-remote-control browser plugin', () => {
       openPairing: vi.fn(() => success({
         qrDataUrl: 'data:image/png;base64,AA==',
         payload: 'NEXA:PAYLOAD',
+        mode: 'miniprogram-code' as const,
         fingerprint: 'ABCDEFGH',
         computerName: 'My computer',
         expiresAt: 1_900_000_000_000,
@@ -146,5 +149,35 @@ describe('ui-remote-control browser plugin', () => {
     })
 
     expect(relayInput.value).toBe('wss://editing.example.com')
+  })
+
+  it('hides the managed Relay and generates a pairing code automatically after connection', async () => {
+    const connected: RemoteControlState = {
+      ...DISABLED,
+      phase: 'connected',
+      relayMode: 'managed',
+      preferences: {
+        ...DISABLED.preferences,
+        enabled: true,
+        relayUrl: 'wss://relay.tppc.top',
+      },
+    }
+    const store = createSnapshotStore({ state: connected, offer: null, busy: null, error: null })
+    const openPairing = vi.fn().mockResolvedValue(undefined)
+    const props = {
+      useRemoteControl: bindSnapshotSelector(store),
+      load: vi.fn().mockResolvedValue(undefined),
+      configure: vi.fn().mockResolvedValue(undefined),
+      reconnect: vi.fn().mockResolvedValue(undefined),
+      openPairing,
+      confirmPairing: vi.fn().mockResolvedValue(undefined),
+      revoke: vi.fn().mockResolvedValue(undefined),
+      t: (key: keyof typeof zh) => zh[key],
+    } as unknown as RemoteControlSectionProps
+
+    render(<RemoteControlSection {...props} />)
+
+    expect(screen.queryByRole('textbox', { name: 'Relay 地址' })).toBeNull()
+    await waitFor(() => { expect(openPairing).toHaveBeenCalledOnce() })
   })
 })

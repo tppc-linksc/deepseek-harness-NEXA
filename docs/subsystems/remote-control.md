@@ -2,13 +2,13 @@
 
 English | [中文](remote-control.zh.md)
 
-The opt-in NEXA Remote bridge in [dsh-remote-control](../../packages/interaction/remote-control) lets a paired WeChat Mini Program observe sessions, append an instruction, stop an active run, or answer a pending approval without creating a second agent runtime. The computer remains authoritative: it owns the long-term identity and peer records, renders the expiring pairing QR, confirms the phone fingerprint, admits commands through the existing Session API, and may revoke a phone at any time.
+The opt-in NEXA Remote bridge in [dsh-qrcode-remote](../../packages/interaction/qrcode-remote) lets a paired WeChat Mini Program observe sessions, append an instruction, stop an active run, or answer a pending approval without creating a second agent runtime. The computer remains authoritative: it owns the long-term identity and peer records, requests an expiring direct-launch Mini Program code from the Relay, confirms the phone fingerprint, admits commands through the existing Session API, and may revoke a phone at any time.
 
-Source: [`packages/interaction/remote-control/src/index.ts`](../../packages/interaction/remote-control/src/index.ts)
+Source: [`packages/interaction/qrcode-remote/src/index.ts`](../../packages/interaction/qrcode-remote/src/index.ts)
 
 ## Connection, pairing, and persistence
 
-`RemoteControlService` owns one NEXA `RemoteHost` and exposes its safe control plane through the `remoteControl` Typert namespace. The Relay only routes opaque frames; authenticated X25519-derived peer channels encrypt application messages end to end. A pairing offer encodes the computer's signed, expiring challenge as a `NEXA:` payload and renders it as a data-URL QR in Settings. Scanning is not sufficient: Settings shows the proposed phone fingerprint and requires explicit confirmation on the computer before the peer becomes trusted.
+`RemoteControlService` owns one NEXA `RemoteHost` and exposes its safe control plane through the `remoteControl` Typert namespace. The Relay only routes opaque frames; authenticated X25519-derived peer channels encrypt application messages end to end. Production uses the fixed, UI-hidden `wss://relay.tppc.top` endpoint; only explicit development configuration permits a custom address. Once connected, Settings automatically requests and refreshes a pairing offer. The offer asks the Relay for a WeChat Mini Program code containing only a short random `scene`; WeChat opens the pairing page directly, and the page exchanges `scene` for the signed, expiring `NEXA:` challenge. If server-only WeChat credentials are unavailable, Settings labels and renders the legacy payload for in-Mini-Program scanning. Scanning is not sufficient: Settings shows the proposed phone fingerprint and requires explicit confirmation on the computer before the peer becomes trusted.
 
 The Host persists the computer identity, encrypted-channel peer keys, preferences, and revocation markers by atomic replacement at the configured `statePath`, then enforces file mode `0600`. `RemoteControlState` and `RemoteControlPairingOffer` are browser-safe projections: neither returns a private identity key nor a peer channel key. The settings UI is therefore a control surface, not a cryptographic owner.
 
@@ -22,7 +22,7 @@ The bridge prepends an answerer to the existing `approval/request` waterfall. It
 
 ## Release boundaries
 
-The bundle ships disabled unless `DSH_REMOTE_ENABLED=1` seeds the first-run preference. Public deployments must configure a `wss://` Relay with durable Redis state. The current file is permission-restricted but is not yet stored in Keychain, DPAPI, or another OS secure store; real-device WeChat networking and SOTER biometric approval remain release gates.
+The bundle ships disabled unless `DSH_REMOTE_ENABLED=1` seeds the first-run preference. Public deployments must provide durable Redis state and WeChat server credentials behind the managed Relay. Local testing sets `DSH_REMOTE_RELAY_URL=ws://127.0.0.1:8080` and `DSH_REMOTE_ALLOW_CUSTOM_RELAY=1`. The current file is permission-restricted but is not yet stored in Keychain, DPAPI, or another OS secure store; real-device WeChat networking and SOTER biometric approval remain release gates.
 
 <!-- BEGIN GENERATED cordis-surface (gen-cordis-catalog.ts) — do not edit between markers -->
 
@@ -78,5 +78,5 @@ Host-owned remote connection, pairing state, and typed settings actions.
 @Remote('revoke') revoke(request: RemoteControlRevokeRequest): RemoteControlState
 ```
 
-Source: [`packages/interaction/remote-control/src/index.ts:279`](../../packages/interaction/remote-control/src/index.ts)
+Source: [`packages/interaction/qrcode-remote/src/index.ts:383`](../../packages/interaction/qrcode-remote/src/index.ts)
 <!-- END GENERATED cordis-surface -->

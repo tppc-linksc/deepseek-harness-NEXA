@@ -34,12 +34,16 @@ const { RemoteHost } = require('nexa-remote/host') as typeof import('nexa-remote
 const Crypto = require('nexa-remote/crypto') as typeof NexaCrypto
 const Messages = require('nexa-remote/messages') as typeof NexaMessages
 
+const OFFICIAL_RELAY_URL = 'wss://relay.tppc.top'
+
 /** Startup defaults and private-state location for the NEXA Remote Host bridge. */
 export interface Config {
   /** Initial Relay connection switch when no persisted preference exists. */
   enabled?: boolean
   /** Initial Relay WebSocket endpoint when no persisted preference exists. */
   relayUrl?: string
+  /** Allow users to edit the Relay endpoint. Development and self-hosting only. */
+  allowCustomRelay?: boolean
   /** Initial computer name placed in pairing offers. */
   computerName?: string
   /** Private JSON file containing the computer identity, peers, and saved preferences. */
@@ -231,9 +235,92 @@ export class DshRemoteHarnessAdapter implements NexaHarnessAdapter {
 
   async getSessionSnapshot(): Promise<unknown> {
     const rpcId = RpcId(`remote-snapshot-${randomUUID()}`)
-    const response = await this.ctx.apiProxy.sessions.list({ rpcId, payload: {} })
+    const workspaceRpcId = RpcId(`remote-workspaces-${randomUUID()}`)
+    const [sessionResponse, workspaceResponse] = await Promise.all([
+      this.ctx.apiProxy.sessions.list({ rpcId, payload: {} }),
+      this.ctx.apiProxy.workspace.list({ rpcId: workspaceRpcId, payload: {} }),
+    ])
+    if (!sessionResponse.result.ok) throw new Error(sessionResponse.result.error.message)
+    if (!workspaceResponse.result.ok) throw new Error(workspaceResponse.result.error.message)
+
+    const workspaces = workspaceResponse.result.value.items
+    const archived = new Set(workspaceResponse.result.value.archivedSessionIds)
+    const workspaceBySession = new Map<string, string>()
+    for (const workspace of workspaces) {
+      for (const sessionId of workspace.sessionIds) workspaceBySession.set(sessionId, workspace.workspaceId)
+    }
+    const fallbackTitle = (cwd: string | undefined, sessionId: string): string => {
+      if (cwd === undefined || cwd === '') return sessionId
+      const parts = cwd.replace(/[/\\]+$/, '').split(/[/\\]/)
+      return parts.at(-1) || sessionId
+    }
+    const sessions = sessionResponse.result.value.items
+      .filter(item => item.origin !== 'subagent')
+      .map((item) => {
+        const projectedTitle = item.projections?.values.title
+        return {
+          sessionId: item.sessionId,
+          workspaceId: workspaceBySession.get(item.sessionId) ?? '',
+          title: typeof projectedTitle === 'string' && projectedTitle !== ''
+            ? projectedTitle : fallbackTitle(item.cwd, item.sessionId),
+          lastActiveAt: item.updatedAt,
+          pinned: false,
+          archived: archived.has(item.sessionId),
+          cursor: item.projections?.asOfSeq ?? 0,
+          pendingInteractions: 0,
+          running: item.running,
+          blank: item.blank,
+        }
+      })
+    return {
+      workspaces: workspaces.map(workspace => ({
+        workspaceId: workspace.workspaceId,
+        name: workspace.title,
+        pinned: false,
+        archived: false,
+      })),
+      sessions,
+      generatedAt: Date.now(),
+    }
+  }
+
+  /**
+   * Read a bounded authoritative event page for one remotely addressed Session.
+   * @param rawSessionId - Session identity received from the authenticated phone command.
+   * @param options - Optional exclusive cursor and bounded page size.
+   * @returns projected events and whether older history remains available.
+   */
+  async getSessionHistory(
+    rawSessionId: string,
+    options: { beforeCursor?: number; maxMessages?: number } = {},
+  ): Promise<{
+    events: Array<{ sessionId: string; cursor: number; kind: number; payload: unknown }>
+    hasMore: boolean
+  }> {
+    const sessionId = rawSessionId as SessionId
+    const response = await this.ctx.apiProxy.sessions.history({
+      rpcId: RpcId(`remote-history-${randomUUID()}`),
+      payload: {
+        sessionId,
+        ...(options.beforeCursor === undefined ? {} : { beforeSeq: options.beforeCursor }),
+        maxMessages: Math.max(1, Math.min(100, options.maxMessages ?? 30)),
+      },
+    })
     if (!response.result.ok) throw new Error(response.result.error.message)
-    return { sessions: response.result.value.items, generatedAt: Date.now() }
+    return {
+      events: response.result.value.events.map(entry => ({
+        sessionId,
+        cursor: entry.event.seq,
+        kind: eventKind(entry.event),
+        payload: {
+          type: entry.event.type,
+          time: entry.event.time,
+          data: entry.event.data,
+          ...(entry.view === undefined ? {} : { view: entry.view }),
+        },
+      })),
+      hasMore: response.result.value.hasMore,
+    }
   }
 
   /**
@@ -250,6 +337,23 @@ export class DshRemoteHarnessAdapter implements NexaHarnessAdapter {
   ): Promise<{ status: 'completed' | 'rejected'; result: string }> {
     const sessionId = rawSessionId as SessionId
     try {
+      // Compatibility path for a desktop build still resolving an older nexa-remote Host:
+      // newer Hosts intercept these read-only actions and send typed snapshot/batch bodies;
+      // older Hosts reach this adapter, so return the same authority data in CommandResult.
+      if (meta.action === 'sync_index') {
+        return { status: 'completed', result: JSON.stringify(await this.getSessionSnapshot()) }
+      }
+      if (meta.action === 'sync_history') {
+        const parsed = text === '' ? {} : JSON.parse(text) as { beforeCursor?: number; maxMessages?: number }
+        return {
+          status: 'completed',
+          result: JSON.stringify({
+            sessionId,
+            ...await this.getSessionHistory(sessionId, parsed),
+            history: true,
+          }),
+        }
+      }
       if (meta.action === 'stop') {
         const response = await this.ctx.apiProxy.sessions.cancel({
           rpcId: RpcId(`remote-stop-${meta.commandId}`),
@@ -281,7 +385,8 @@ export class RemoteControlService extends TypertRemoteService {
 
   static Config: s<Config> = s.object({
     enabled: s.boolean().default(true),
-    relayUrl: s.string().default('ws://127.0.0.1:8080'),
+    relayUrl: s.string().default(OFFICIAL_RELAY_URL),
+    allowCustomRelay: s.boolean().default(false),
     computerName: s.string().default('DeepSeek Harness NEXA'),
     statePath: s.string().required(),
   })
@@ -290,6 +395,8 @@ export class RemoteControlService extends TypertRemoteService {
   private readonly identity: NexaIdentity
   private readonly peers: Map<string, NexaPeer>
   private readonly harness: DshRemoteHarnessAdapter
+  private readonly managedRelayUrl: string
+  private readonly allowCustomRelay: boolean
   private preferences: RemoteControlPreferences
   private host: RemoteHostType | undefined
   private phase: RemoteControlPhase = 'disconnected'
@@ -299,15 +406,20 @@ export class RemoteControlService extends TypertRemoteService {
   constructor(ctx: Context, config: Config) {
     super(ctx, 'remoteControl')
     this.statePath = config.statePath
+    this.managedRelayUrl = normalizeRelayUrl(config.relayUrl ?? OFFICIAL_RELAY_URL)
+    this.allowCustomRelay = config.allowCustomRelay ?? false
     const defaults = normalizePreferences({
       enabled: config.enabled ?? true,
-      relayUrl: config.relayUrl ?? 'ws://127.0.0.1:8080',
+      relayUrl: this.managedRelayUrl,
       computerName: config.computerName ?? 'DeepSeek Harness NEXA',
     })
     const loaded = loadState(this.statePath, defaults)
     this.identity = loaded.identity
     this.peers = loaded.peers
-    this.preferences = loaded.preferences
+    this.preferences = normalizePreferences({
+      ...loaded.preferences,
+      relayUrl: this.allowCustomRelay ? loaded.preferences.relayUrl : this.managedRelayUrl,
+    })
     this.harness = new DshRemoteHarnessAdapter(ctx)
     this.persist()
 
@@ -338,6 +450,7 @@ export class RemoteControlService extends TypertRemoteService {
     }
     return Object.freeze({
       phase: this.phase,
+      relayMode: this.allowCustomRelay ? 'custom' : 'managed',
       preferences: { ...this.preferences },
       computerId: this.identity.deviceId,
       pairedDevices: this.host?.pairedDevices() ?? [...this.peers].map(([deviceId, peer]) => ({
@@ -357,7 +470,10 @@ export class RemoteControlService extends TypertRemoteService {
    */
   @Remote('configure')
   async configure(request: RemoteControlConfigureRequest): Promise<RemoteControlState> {
-    this.preferences = normalizePreferences(request)
+    this.preferences = normalizePreferences({
+      ...request,
+      relayUrl: this.allowCustomRelay ? request.relayUrl : this.managedRelayUrl,
+    })
     this.persist()
     await this.restart()
     return this.state()
@@ -383,11 +499,17 @@ export class RemoteControlService extends TypertRemoteService {
     if (this.phase !== 'connected' || this.host === undefined) {
       throw new Error(this.error ?? 'remote-control: relay is not connected')
     }
-    const challenge = this.host.openPairing({ computerName: this.preferences.computerName })
+    const challenge = await this.host.openPairing({ computerName: this.preferences.computerName })
     const payload = this.pairingPayload(challenge)
+    const miniProgramCode = challenge.launch?.mode === 'miniprogram-code'
+      ? challenge.launch.imageDataUrl
+      : undefined
     return {
       payload,
-      qrDataUrl: await QRCode.toDataURL(payload, { errorCorrectionLevel: 'M', margin: 1, width: 280 }),
+      qrDataUrl: miniProgramCode
+        ?? await QRCode.toDataURL(payload, { errorCorrectionLevel: 'M', margin: 1, width: 280 }),
+      mode: miniProgramCode === undefined ? 'fallback-qr' : 'miniprogram-code',
+      ...(challenge.launch?.reason === undefined ? {} : { fallbackReason: challenge.launch.reason }),
       fingerprint: challenge.computerPubFingerprint,
       computerName: challenge.computerName,
       expiresAt: challenge.expiresAt,

@@ -18,6 +18,9 @@
 }
 
 .header { align-items: flex-start; }
+.cardHeading { align-items: flex-start; }
+.cardHeading > div { min-width: 0; }
+.cardHeading button { flex: 0 0 auto; min-width: max-content; white-space: nowrap; }
 .header h2,
 .card h3 { margin: 0; font-size: 15px; }
 .header p,

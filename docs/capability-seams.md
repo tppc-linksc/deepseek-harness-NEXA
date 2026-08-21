@@ -142,7 +142,7 @@ flowchart LR
   pkg_fs_sandbox["fs-sandbox"]
   pkg_approval["approval"]
   svc_approval["ctx.approval<br/>Approval seam"]
-  pkg_remote_control["remote-control"]
+  pkg_qrcode_remote["qrcode-remote"]
   svc_remoteControl["ctx.remoteControl<br/>NEXA remote-control bridge"]
   pkg_api_remotes["api-remotes"]
   pkg_permission_presets["permission-presets"]
@@ -255,7 +255,7 @@ flowchart LR
   pkg_permission_presets --> svc_permissionPresets
   pkg_plan_mode --> svc_planMode
   pkg_pwsh_local --> svc_shell
-  pkg_remote_control --> svc_remoteControl
+  pkg_qrcode_remote --> svc_remoteControl
   pkg_sandbox --> svc_sandbox
   pkg_sandbox_local --> svc_sandbox
   pkg_sandbox_policy --> svc_sandboxPolicy
@@ -472,7 +472,7 @@ flowchart LR
 | `ctx.sandbox` | `seam` | [`sandbox`](../packages/sandbox/sandbox) | [`sandbox-local`](../packages/sandbox/sandbox-local) | [`bash-sandbox`](../packages/shell/bash-sandbox), [`terminal-bash`](../packages/terminal/terminal-bash) | - | Consumers hand over the exact argv they are about to spawn; same-world backends wrap it under a per-call policy and report enforcement. |
 | `ctx.sandboxPolicy` | `core` | [`sandbox-policy`](../packages/sandbox/sandbox-policy) | - | [`bash-sandbox`](../packages/shell/bash-sandbox), [`fs-sandbox`](../packages/fs/fs-sandbox), [`terminal-bash`](../packages/terminal/terminal-bash) | - | The one home for the deployment default mode + workspace root; only the sandboxed executor and provider read the service (the tool layers use the pure `sandbox/mode` fold it also exports). Both enforcing families read it so bash and fs cannot confine to different roots. |
 | `ctx.approval` | `seam` | `approval` | [`acp`](../packages/acp/acp) | [`tools`](../packages/core/tools), [`tool-bash`](../packages/shell/tool-bash) | - | One-shot permission decisions dispatched over the `approval/request` waterfall; answerers are listeners (the ACP bridge for its own agents), absence fails closed to `unavailable`. |
-| `ctx.remoteControl` | `core` | [`remote-control`](../packages/interaction/remote-control) | - | [`api-remotes`](../packages/api/remotes) | - | Owns the computer identity, encrypted Relay channel, pairing and revocation state, DSH command adapter, and the Typert control plane mounted by api-remotes. |
+| `ctx.remoteControl` | `core` | [`qrcode-remote`](../packages/interaction/qrcode-remote) | - | [`api-remotes`](../packages/api/remotes) | - | Owns the computer identity, encrypted Relay channel, pairing and revocation state, DSH command adapter, and the Typert control plane mounted by api-remotes. |
 | `ctx.permissionPresets` | `core` | [`permission-presets`](../packages/interaction/permission-presets) | - | - | - | User-facing preset table (`workspace-write`/`danger-full-access`) bundling the sandbox-mode and approval-policy knobs; a switch writes one `permission/preset` event through to both knob events. |
 | `ctx.codeRuntime` | `seam` | [`code-runtime`](../packages/code-runtime/code-runtime) | `code-runtime-worker` | [`tools`](../packages/core/tools) | - | Runs one model-written program against host-provided async bindings; backends differ by substrate and language (the tool registry consumes it for Code Mode). |
 | `ctx.fs` | `seam` | [`fs`](../packages/fs/fs) | [`fs-local`](../packages/fs/fs-local), [`fs-sandbox`](../packages/fs/fs-sandbox), [`fs-e2b`](../packages/e2b/fs-e2b) | [`tool-fs`](../packages/fs/tool-fs) | [`fs-observation-policy`](../packages/fs/fs-observation-policy) | tool-fs executes read/write/edit through ctx.fs; fs-sandbox fences mutations by the shared sandbox mode; fs-observation-policy contributes observed-state checks through the fs/* event gate. |

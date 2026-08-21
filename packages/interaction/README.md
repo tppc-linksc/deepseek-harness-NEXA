@@ -10,7 +10,7 @@ The services and plugins through which a human collaborates with a running agent
 | [`user-approval/`](user-approval/README.md) | Coordinates one-shot approval decisions. | `ctx.approval` |
 | [`permission/`](permission-presets/README.md) | Presents and persists user-facing permission presets. | `ctx.permissionPresets` |
 | [`user-questions/`](user-questions/README.md) | Defines the provider-neutral human question/answer seam. | `ctx.userQuestions` |
-| [`remote-control/`](remote-control/README.md) | Bridges a paired NEXA Remote phone to Host sessions and approvals. | `ctx.remoteControl` |
+| [`qrcode-remote/`](qrcode-remote/README.md) | Bridges a paired NEXA Remote phone to Host sessions and approvals. | `ctx.remoteControl` |
 | [`tool-ask-user/`](tool-ask-user/README.md) | Exposes human questions to the model. | (registers on `ctx.tools`) |
 
 These packages integrate through existing agent and session contracts rather than changing the loop. Interactive applications provide the concrete command, approval, and question adapters; automation uses [`acp/`](../acp/README.md), and runnable demo bundles live under [`examples/`](../examples/README.md). The product [`dsh`](../../apps/cli/README.md) CLI composes these packages directly.

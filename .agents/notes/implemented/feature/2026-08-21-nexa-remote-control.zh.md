@@ -10,11 +10,11 @@ NEXA Remote 微信小程序与 Relay 已存在于独立仓库，但 DeepSeek Har
 
 ## 决策
 
-新增 `@deepseek-ai/dsh-remote-control` 作为 Host 持有的集成边界。它固定依赖经过审查的 NEXA Remote commit，负责电脑身份和对端存储、连接 Relay、创建短时配对二维码、要求电脑端确认、解除已配对手机，并只通过生成的 `remoteControl` Typert 命名空间公开浏览器安全的状态与操作。状态文件以原子替换方式写入，并限制为所有者可读写的 `0600` 权限；长期身份材料和通道密钥绝不会穿过 Remote 边界。
+新增 `@deepseek-ai/dsh-qrcode-remote` 作为 Host 持有的集成边界。Web 组合将它挂载为 `qrcode-remote` Cordis 条目，因此运行组件清单会公开这一准确组件身份。它固定依赖经过审查的 NEXA Remote commit，负责电脑身份和对端存储、连接 Relay、创建短时配对二维码、要求电脑端确认、解除已配对手机，并只通过生成的 `remoteControl` Typert 命名空间公开浏览器安全的状态与操作。状态文件以原子替换方式写入，并限制为所有者可读写的 `0600` 权限；长期身份材料和通道密钥绝不会穿过 Remote 边界。
 
 手机远程指令通过 `ctx.apiProxy.sessions.prompt` 的 queue 模式进入，并等待目标 Agent 空闲；停止请求复用既有 cancel 路由。适配层只接受明确列出的 `append_instruction` 与 `stop` 动作，并转发既有 Session 事件，不创建第二套 transcript。只有已配对手机在线时，它才作为前置 `approval/request` 应答器参与审批；手机不可用时委托给后续本地应答器，手机允许也只会映射为 `allowed-once`。
 
-新增 `@deepseek-ai/dsh-client-ui-remote-control`，在设置中提供名为“**远程操控**”/“Remote Control”的独立分区。它可以配置 Relay 与电脑名称、显示连接错误、生成并展示二维码、在电脑上确认待配对手机，以及解除设备。轮询只在分区挂载期间运行，且永不返回密钥。Web bundle 与继承它的桌面组合同时挂载这两个包。首次启动采用可选启用方式；环境变量可写入初始值，保存后的偏好成为权威来源。
+新增 `@deepseek-ai/dsh-client-ui-remote-control`，在设置中提供名为“**远程操控**”/“Remote Control”的独立分区。它可以配置 Relay 与电脑名称、显示连接错误、生成并展示可由微信扫码直达的小程序码（或带明确标签的开发兜底码）、在电脑上确认待配对手机，以及解除设备。小程序码只包含 Relay 短票据，微信服务端密钥始终留在 Relay。轮询只在分区挂载期间运行，且永不返回密钥。Web bundle 与继承它的桌面组合同时挂载这两个包。首次启动采用可选启用方式；环境变量可写入初始值，保存后的偏好成为权威来源。
 
 ## 考虑过的替代方案
 

@@ -40,7 +40,7 @@
       "path": "../../feedback/message-feedback"
     },
     {
-      "path": "../../interaction/remote-control"
+      "path": "../../interaction/qrcode-remote"
     },
     {
       "path": "../../host/plugin-inventory"

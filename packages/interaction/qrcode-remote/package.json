@@ -1,12 +1,12 @@
 {
-  "name": "@deepseek-ai/dsh-remote-control",
+  "name": "@deepseek-ai/dsh-qrcode-remote",
   "description": "NEXA Remote host bridge, pairing control, and typed settings Remote for DeepSeek Harness",
   "version": "0.1.0-rc.9",
   "publishConfig": { "access": "public" },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/tppc-linksc/deepseek-harness-NEXA.git",
-    "directory": "packages/interaction/remote-control"
+    "directory": "packages/interaction/qrcode-remote"
   },
   "type": "module",
   "main": "lib/index.js",
@@ -33,7 +33,7 @@
   "license": "MIT",
   "dependencies": {
     "@deepseek-ai/schemastery": "workspace:^",
-    "nexa-remote": "git+ssh://git@github.com/tppc-linksc/NEXA-Remote.git#b9c47ea71f4f23b58d08c6c7289f0f0d7d943f91",
+    "nexa-remote": "git+ssh://git@github.com/tppc-linksc/NEXA-Remote.git#1db67b25e0906a4fbb7ddbf000291f3388f59c5d",
     "qrcode": "^1.5.4",
     "zod": "^4.4.3"
   },

@@ -20,6 +20,7 @@ export interface RemoteControlDevice {
 /** Browser-safe snapshot returned by the Host control plane. */
 export interface RemoteControlState {
   phase: RemoteControlPhase
+  relayMode: 'managed' | 'custom'
   preferences: RemoteControlPreferences
   computerId: string
   pairedDevices: RemoteControlDevice[]
@@ -38,6 +39,8 @@ export interface RemoteControlConfigureRequest {
 export interface RemoteControlPairingOffer {
   qrDataUrl: string
   payload: string
+  mode: 'miniprogram-code' | 'fallback-qr'
+  fallbackReason?: string
   fingerprint: string
   computerName: string
   expiresAt: number

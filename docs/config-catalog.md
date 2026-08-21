@@ -1530,9 +1530,9 @@ Depends on: [`LocalConfig`](#deepseek-aidsh-pwsh-local)
 
 Source: [`packages/shell/pwsh-sandbox/src/index.ts:40`](../packages/shell/pwsh-sandbox/src/index.ts)
 
-<a id="deepseek-aidsh-remote-control"></a>
+<a id="deepseek-aidsh-qrcode-remote"></a>
 
-## `@deepseek-ai/dsh-remote-control`
+## `@deepseek-ai/dsh-qrcode-remote`
 
 Requires: `agents` · `apiProxy`
 
@@ -1543,6 +1543,8 @@ export interface Config {
   enabled?: boolean
   /** Initial Relay WebSocket endpoint when no persisted preference exists. */
   relayUrl?: string
+  /** Allow users to edit the Relay endpoint. Development and self-hosting only. */
+  allowCustomRelay?: boolean
   /** Initial computer name placed in pairing offers. */
   computerName?: string
   /** Private JSON file containing the computer identity, peers, and saved preferences. */
@@ -1550,7 +1552,7 @@ export interface Config {
 }
 ```
 
-Source: [`packages/interaction/remote-control/src/index.ts:38`](../packages/interaction/remote-control/src/index.ts)
+Source: [`packages/interaction/qrcode-remote/src/index.ts:40`](../packages/interaction/qrcode-remote/src/index.ts)
 
 <a id="deepseek-aidsh-repeat-tool-reminder"></a>
 

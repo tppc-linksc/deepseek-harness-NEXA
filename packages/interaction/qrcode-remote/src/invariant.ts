@@ -4,9 +4,9 @@
 import type { Context } from '@deepseek-ai/cordis'
 import type { InvariantInstaller } from '@deepseek-ai/dsh-invariants'
 
-const PACKAGE_NAME = '@deepseek-ai/dsh-remote-control'
+const PACKAGE_NAME = '@deepseek-ai/dsh-qrcode-remote'
 
-export const name = 'remote-control-invariant'
+export const name = 'qrcode-remote-invariant'
 export const inject = ['invariants']
 
 /** No runtime invariant: the service owns one Host and one private state file with no second authority. */

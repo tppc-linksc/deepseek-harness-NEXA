@@ -435,7 +435,7 @@ const SERVICE_ROLES: ServiceRole[] = [
   },
   {
     key: 'remoteControl',
-    pkg: 'remote-control',
+    pkg: 'qrcode-remote',
     title: 'NEXA remote-control bridge',
     mode: 'core',
     consumers: ['api-remotes'],

@@ -105,14 +105,15 @@
     - id: api-gateway
       name: '@deepseek-ai/dsh-host-apiproxy'
 
-    # Opt-in NEXA phone bridge. Settings persist under the DSH home with
-    # owner-only permissions; the browser receives status and QR data only.
-    - id: remote-control
-      name: '@deepseek-ai/dsh-remote-control'
+    # Opt-in NEXA phone bridge. Production uses the managed Relay without
+    # exposing its endpoint; local/self-hosted debugging must opt in explicitly.
+    - id: qrcode-remote
+      name: '@deepseek-ai/dsh-qrcode-remote'
       config:
         statePath: !!js dshHomePath('remote-control/state.json')
         enabled: !!js process.env.DSH_REMOTE_ENABLED === '1'
-        relayUrl: !!js process.env.DSH_REMOTE_RELAY_URL ?? 'ws://127.0.0.1:8080'
+        relayUrl: !!js process.env.DSH_REMOTE_RELAY_URL ?? 'wss://relay.tppc.top'
+        allowCustomRelay: !!js process.env.DSH_REMOTE_ALLOW_CUSTOM_RELAY === '1'
         computerName: !!js process.env.DSH_REMOTE_COMPUTER_NAME ?? 'DeepSeek Harness NEXA'
 
     - id: cordis-host-runner

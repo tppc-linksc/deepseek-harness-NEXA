@@ -55,6 +55,14 @@ declare module 'nexa-remote/host' {
     computerDhPubkey: Uint8Array
     pairingNonce: Uint8Array
     computerName: string
+    launch?: {
+      mode: 'miniprogram-code' | 'fallback-qr'
+      imageDataUrl?: string
+      payload?: string
+      reason?: string
+      scene: string
+      expiresAt: number
+    }
   }
 
   export interface NexaPairingProposal {
@@ -65,6 +73,13 @@ declare module 'nexa-remote/host' {
 
   export interface NexaHarnessAdapter {
     getSessionSnapshot(): Promise<unknown>
+    getSessionHistory(
+      sessionId: string,
+      options?: { beforeCursor?: number; maxMessages?: number },
+    ): Promise<{
+      events: Array<{ sessionId: string; cursor: number; kind: number; payload: unknown }>
+      hasMore: boolean
+    }>
     subscribeEvents(callback: (event: {
       sessionId: string
       cursor: number
@@ -92,7 +107,7 @@ declare module 'nexa-remote/host' {
     onPairingPendingUser?: (proposal: NexaPairingProposal) => void
     start(): Promise<void>
     close(): void
-    openPairing(options?: { ttlMs?: number; computerName?: string }): NexaPairingChallenge
+    openPairing(options?: { ttlMs?: number; computerName?: string }): Promise<NexaPairingChallenge>
     confirmPendingPairing(): boolean
     requestApproval(request: {
       approvalId: string

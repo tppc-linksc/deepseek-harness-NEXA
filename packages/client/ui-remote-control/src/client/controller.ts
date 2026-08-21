@@ -7,7 +7,7 @@ import type {
   RemoteControlPairingOffer,
   RemoteControlRevokeRequest,
   RemoteControlState,
-} from '@deepseek-ai/dsh-remote-control/types'
+} from '@deepseek-ai/dsh-qrcode-remote/types'
 
 /** Remote namespace shape consumed by the browser controller. */
 export interface RemoteControlRemote {
@@ -29,7 +29,12 @@ export interface RemoteControlView {
 
 const INITIAL_STATE: RemoteControlState = {
   phase: 'disconnected',
-  preferences: { enabled: false, relayUrl: 'ws://127.0.0.1:8080', computerName: 'DeepSeek Harness NEXA' },
+  relayMode: 'managed',
+  preferences: {
+    enabled: false,
+    relayUrl: 'wss://relay.tppc.top',
+    computerName: 'DeepSeek Harness NEXA',
+  },
   computerId: '…',
   pairedDevices: [],
 }

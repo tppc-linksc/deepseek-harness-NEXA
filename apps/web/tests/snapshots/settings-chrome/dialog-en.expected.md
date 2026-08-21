@@ -13,6 +13,9 @@
     - button "Agent presets":
       - img
       - text: Agent presets
+    - button "Remote Control":
+      - img
+      - text: Remote Control
   - button "Open configuration file"
   - button "Close":
     - img
