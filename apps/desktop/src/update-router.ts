@@ -14,8 +14,7 @@ export interface DesktopUpdateRouteManager {
   state(): DesktopUpdateState
   check(): Promise<void>
   startDownload(): void
-  startUpdate(): void
-  install(): Promise<void>
+  startInstall(): void
   setAutomaticChecks(enabled: boolean): Promise<void>
 }
 
@@ -70,19 +69,15 @@ export async function handleDesktopUpdateRequest(
       manager.startDownload()
       return json(manager.state(), 202)
     }
-    if (route === 'apply' && request.method === 'POST') {
-      manager.startUpdate()
-      return json(manager.state(), 202)
-    }
     if (route === 'install' && request.method === 'POST') {
-      await manager.install()
-      return json(manager.state())
+      manager.startInstall()
+      return json(manager.state(), 202)
     }
     if (route === 'preferences' && request.method === 'PUT') {
       await manager.setAutomaticChecks(await automaticChecks(request))
       return json(manager.state())
     }
-    if (['state', 'check', 'download', 'apply', 'install', 'preferences'].includes(route)) {
+    if (['state', 'check', 'download', 'install', 'preferences'].includes(route)) {
       return routeError(405, '此更新操作不支持当前请求方法。')
     }
     return routeError(404, '更新操作不存在。')

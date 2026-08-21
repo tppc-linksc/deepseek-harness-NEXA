@@ -1,0 +1,8 @@
+- status:
+  - strong: New version available
+  - text: 0.1.0-rc.7 → 0.1.0-rc.8
+  - button "Dismiss update reminder":
+    - img
+  - paragraph: The installer downloads in the background and is verified with SHA-256. You can keep using the application.
+  - button "Download update"
+  - button "Later"

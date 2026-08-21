@@ -21,6 +21,7 @@ export interface DesktopUpdateState {
   phase: DesktopUpdatePhase
   currentVersion: string
   automaticChecks: boolean
+  installer?: 'appimage' | 'dmg' | 'nsis'
   availableVersion?: string
   upstreamVersion?: string
   releaseNotesUrl?: string
@@ -42,7 +43,7 @@ const optionalStringFields = [
 ] as const
 const optionalNumberFields = ['downloadedBytes', 'totalBytes'] as const
 const acceptedFields = new Set([
-  ...requiredFields, ...optionalStringFields, ...optionalNumberFields,
+  ...requiredFields, 'installer', ...optionalStringFields, ...optionalNumberFields,
 ])
 
 /**
@@ -70,6 +71,14 @@ export function parseDesktopUpdateState(value: unknown): DesktopUpdateState {
     if (state[field] !== undefined && (typeof state[field] !== 'string' || state[field].length === 0)) {
       throw new Error(`update state ${field} is invalid`)
     }
+  }
+  if (
+    state.installer !== undefined
+    && state.installer !== 'appimage'
+    && state.installer !== 'dmg'
+    && state.installer !== 'nsis'
+  ) {
+    throw new Error('update state installer is invalid')
   }
   for (const field of optionalNumberFields) {
     if (state[field] !== undefined && (!Number.isSafeInteger(state[field]) || (state[field] as number) < 0)) {
@@ -109,8 +118,10 @@ export class DesktopUpdateController {
     automaticChecks: true,
   })
 
-  private generation = 0
-  private active = false
+  private nextRequest = 0
+  private publishedRequest = 0
+  private activeAction: symbol | undefined
+  private disposed = false
 
   /** @param fetcher - browser fetch implementation, injectable for tests. */
   constructor(private readonly fetcher: UpdateFetch = globalThis.fetch.bind(globalThis)) {}
@@ -131,11 +142,6 @@ export class DesktopUpdateController {
     await this.request('download', 'POST')
   }
 
-  /** Download, verify, and open the compatible installer. */
-  async update(): Promise<void> {
-    await this.request('apply', 'POST')
-  }
-
   /** Reverify and open the staged installer. */
   async install(): Promise<void> {
     await this.request('install', 'POST')
@@ -151,13 +157,14 @@ export class DesktopUpdateController {
 
   /** Stop in-flight responses from publishing after plugin disposal. */
   dispose(): void {
-    this.generation += 1
+    this.disposed = true
   }
 
   private async request(route: string, method: string, body?: unknown): Promise<void> {
-    if (this.active && route !== 'state') return
-    const generation = ++this.generation
-    if (route !== 'state') this.active = true
+    if (this.disposed || (this.activeAction !== undefined && route !== 'state')) return
+    const request = ++this.nextRequest
+    const action = route === 'state' ? undefined : Symbol(route)
+    if (action !== undefined) this.activeAction = action
     try {
       const init: RequestInit = {
         method,
@@ -170,15 +177,23 @@ export class DesktopUpdateController {
       const response = await this.fetcher(`/_desktop/update/${route}`, init)
       if (!response.ok) throw new Error(await errorMessage(response))
       const state = parseDesktopUpdateState(await response.json())
-      if (generation === this.generation) this.store.set(state)
+      if (this.shouldPublish(request)) {
+        this.publishedRequest = request
+        this.store.set(state)
+      }
     } catch (error) {
-      if (generation !== this.generation) return
+      if (!this.shouldPublish(request)) return
+      this.publishedRequest = request
       this.store.update((state) => {
         state.phase = 'error'
         state.error = error instanceof Error ? error.message : String(error)
       })
     } finally {
-      if (route !== 'state' && generation === this.generation) this.active = false
+      if (action !== undefined && this.activeAction === action) this.activeAction = undefined
     }
+  }
+
+  private shouldPublish(request: number): boolean {
+    return !this.disposed && request > this.publishedRequest
   }
 }

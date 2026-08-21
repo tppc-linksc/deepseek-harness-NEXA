@@ -1,0 +1,121 @@
+.notice {
+  position: absolute;
+  left: 20px;
+  bottom: 20px;
+  width: min(360px, calc(100% - 40px));
+  box-sizing: border-box;
+  padding: 16px;
+  border: 1px solid var(--dsw-alias-border-l2);
+  border-radius: 16px;
+  background: var(--dsw-alias-bg-layer-1);
+  box-shadow: var(--dsw-shadow-lv3);
+  color: var(--dsw-alias-label-primary);
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: var(--dsw-alias-brand-primary);
+  color: var(--dsw-alias-label-primary-foreground);
+}
+
+.heading {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  padding-top: 1px;
+}
+
+.heading strong {
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.heading span,
+.detail {
+  color: var(--dsw-alias-label-tertiary);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.heading span {
+  font-variant-numeric: tabular-nums;
+}
+
+.close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--dsw-alias-label-tertiary);
+  cursor: pointer;
+}
+
+.close:hover {
+  background: var(--dsw-alias-button-floating-hover);
+  color: var(--dsw-alias-label-primary);
+}
+
+.close:focus-visible {
+  outline: 2px solid var(--dsw-alias-state-business-primary);
+  outline-offset: 2px;
+}
+
+.detail {
+  margin: 10px 0 0 42px;
+}
+
+.progressTrack {
+  height: 4px;
+  margin: 12px 0 0 42px;
+  overflow: hidden;
+  border-radius: 2px;
+  background: var(--dsw-alias-bg-module-platform);
+}
+
+.progressTrack span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--dsw-alias-brand-primary);
+  transition: width 160ms ease;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 14px 0 0 42px;
+}
+
+@media (max-width: 640px) {
+  .notice {
+    left: 12px;
+    bottom: 12px;
+    width: calc(100% - 24px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .progressTrack span {
+    transition: none;
+  }
+}

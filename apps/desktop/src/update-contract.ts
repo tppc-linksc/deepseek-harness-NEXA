@@ -75,6 +75,7 @@ export interface DesktopUpdateState {
   readonly phase: DesktopUpdatePhase
   readonly currentVersion: string
   readonly automaticChecks: boolean
+  readonly installer?: DesktopUpdateInstaller
   readonly availableVersion?: string
   readonly upstreamVersion?: string
   readonly releaseNotesUrl?: string

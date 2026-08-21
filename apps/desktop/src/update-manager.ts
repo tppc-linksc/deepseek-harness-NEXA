@@ -13,6 +13,7 @@ import {
   selectLatestDesktopUpdateRelease,
   selectDesktopUpdateAsset,
   type DesktopUpdateAsset,
+  type DesktopUpdateInstaller,
   type DesktopUpdateManifest,
   type DesktopUpdateState,
 } from './update-contract.ts'
@@ -202,10 +203,12 @@ export class DesktopUpdateManager {
     this.now = options.now ?? (() => new Date())
     this.manifestUrl = options.manifestUrl
     this.releaseFeedUrl = options.releaseFeedUrl ?? DESKTOP_UPDATE_RELEASES_URL
+    const installer = this.installerType()
     this.stateValue = {
-      phase: this.supportedTarget() ? 'idle' : 'unsupported',
+      phase: installer === undefined ? 'unsupported' : 'idle',
       currentVersion: options.currentVersion,
       automaticChecks: true,
+      ...(installer === undefined ? {} : { installer }),
     }
   }
 
@@ -411,15 +414,6 @@ export class DesktopUpdateManager {
 
   /** Start a verified installer download without blocking the renderer request. */
   startDownload(): void {
-    this.startInstallerOperation(false)
-  }
-
-  /** Download, verify, and open the compatible installer as one user-approved operation. */
-  startUpdate(): void {
-    this.startInstallerOperation(true)
-  }
-
-  private startInstallerOperation(openWhenReady: boolean): void {
     if (this.operation !== undefined) throw new Error('another update operation is active')
     const manifest = this.manifest
     const asset = this.asset
@@ -433,13 +427,22 @@ export class DesktopUpdateManager {
       totalBytes: asset.size,
       error: undefined,
     })
+    const running = this.download(manifest, asset)
+    this.operation = running.finally(() => { this.operation = undefined })
+  }
+
+  /** Reverify and open the staged installer without blocking the renderer request. */
+  startInstall(): void {
+    if (this.operation !== undefined) throw new Error('another update operation is active')
+    if (this.stateValue.phase !== 'downloaded') throw new Error('no verified installer is staged')
+    this.setState({ phase: 'installing', error: undefined })
     const running = (async () => {
-      await this.download(manifest, asset)
-      if (!openWhenReady || this.stateValue.phase !== 'downloaded') return
       try {
-        await this.install()
+        await this.openStagedInstaller()
       } catch (error) {
-        this.setState({ phase: 'error', error: publicError(error) })
+        if (this.stateValue.phase !== 'error') {
+          this.setState({ phase: 'error', error: publicError(error) })
+        }
       }
     })()
     this.operation = running.finally(() => { this.operation = undefined })
@@ -450,21 +453,19 @@ export class DesktopUpdateManager {
     await this.operation
   }
 
-  /** Open the verified installer after an explicit user action. */
-  async install(): Promise<void> {
+  private async openStagedInstaller(): Promise<void> {
     const staged = parseStaged(JSON.parse(await readFile(this.path(stagedFileName), 'utf8')))
     const installer = this.path(staged.fileName)
     const details = await stat(installer)
     if (!details.isFile() || details.size !== staged.size) throw new Error('staged installer size does not match metadata')
     if (await hashFile(installer) !== staged.sha256) throw new Error('staged installer checksum does not match metadata')
     if (this.options.platform === 'linux') await chmod(installer, 0o755)
-    this.setState({ phase: 'installing', error: undefined })
     const failure = await this.options.openPath(installer)
     if (failure !== '') {
       this.setState({ phase: 'error', error: '无法打开安装包，请在下载目录中手动打开。' })
       throw new Error(`failed to open installer: ${failure}`)
     }
-    if (this.options.platform === 'win32') this.options.quit()
+    if (this.options.platform === 'darwin' || this.options.platform === 'win32') this.options.quit()
     else this.setState({ phase: 'downloaded' })
   }
 
@@ -531,11 +532,14 @@ export class DesktopUpdateManager {
   }
 
   private supportedTarget(): boolean {
-    return (
-      (this.options.platform === 'darwin' && this.options.arch === 'arm64')
-      || (this.options.platform === 'win32' && this.options.arch === 'x64')
-      || (this.options.platform === 'linux' && this.options.arch === 'x64')
-    )
+    return this.installerType() !== undefined
+  }
+
+  private installerType(): DesktopUpdateInstaller | undefined {
+    if (this.options.platform === 'darwin' && this.options.arch === 'arm64') return 'dmg'
+    if (this.options.platform === 'win32' && this.options.arch === 'x64') return 'nsis'
+    if (this.options.platform === 'linux' && this.options.arch === 'x64') return 'appimage'
+    return undefined
   }
 
   private setState(next: DesktopUpdateStatePatch): void {
@@ -547,6 +551,7 @@ export class DesktopUpdateManager {
       phase: merged.phase,
       currentVersion: this.options.currentVersion,
       automaticChecks: this.preferences.automaticChecks,
+      ...(merged.installer === undefined ? {} : { installer: merged.installer }),
       ...(merged.availableVersion === undefined ? {} : { availableVersion: merged.availableVersion }),
       ...(merged.upstreamVersion === undefined ? {} : { upstreamVersion: merged.upstreamVersion }),
       ...(merged.releaseNotesUrl === undefined ? {} : { releaseNotesUrl: merged.releaseNotesUrl }),

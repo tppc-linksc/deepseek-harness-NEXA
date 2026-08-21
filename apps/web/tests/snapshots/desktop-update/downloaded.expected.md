@@ -1,0 +1,8 @@
+- status:
+  - strong: Download complete
+  - text: 0.1.0-rc.7 → 0.1.0-rc.8
+  - button "Dismiss update reminder":
+    - img
+  - paragraph: The installer is verified. The DMG opens after the application quits so you can replace the old version.
+  - button "Quit and open DMG"
+  - button "Later"

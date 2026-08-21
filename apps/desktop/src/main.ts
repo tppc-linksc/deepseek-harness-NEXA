@@ -235,7 +235,6 @@ class DesktopHost {
 let mainWindow: BrowserWindow | undefined
 let host: DesktopHost | undefined
 let updateManager: DesktopUpdateManager | undefined
-let updatePrompt: Promise<void> | undefined
 let hostFailurePrompt: Promise<void> | undefined
 
 function reportHostFailure(error: unknown): Promise<void> {
@@ -373,12 +372,12 @@ async function createWindow(): Promise<void> {
     if (!isDesktopUrl(url)) event.preventDefault()
   })
   mainWindow.on('closed', () => { mainWindow = undefined })
-  await mainWindow.loadURL(`${DESKTOP_ORIGIN}/`)
   if (desktopUpdates.shouldAutomaticallyCheck()) {
-    updatePrompt ??= promptForAutomaticUpdate(desktopUpdates, mainWindow)
-      .catch((error: unknown) => { console.error('automatic desktop update prompt failed', error) })
-      .finally(() => { updatePrompt = undefined })
+    void desktopUpdates.check().catch((error: unknown) => {
+      console.error('automatic desktop update check failed', error)
+    })
   }
+  await mainWindow.loadURL(`${DESKTOP_ORIGIN}/`)
 }
 
 async function startUpdateManager(): Promise<DesktopUpdateManager> {
@@ -393,50 +392,6 @@ async function startUpdateManager(): Promise<DesktopUpdateManager> {
   })
   await manager.initialize()
   return manager
-}
-
-async function promptForAutomaticUpdate(manager: DesktopUpdateManager, window: BrowserWindow): Promise<void> {
-  try {
-    await manager.check()
-  } catch {
-    return
-  }
-  const available = manager.state()
-  if (available.phase !== 'available' || available.availableVersion === undefined || window.isDestroyed()) return
-  const upstream = available.upstreamVersion === undefined ? '' : `\n包含官方 Harness ${available.upstreamVersion}。`
-  const updateLabel = process.platform === 'darwin'
-    ? '下载并打开 DMG'
-    : process.platform === 'linux'
-      ? '下载并打开 AppImage'
-      : '下载并安装'
-  const platformDetail = process.platform === 'win32'
-    ? '下载完成后应用将退出并启动安装程序，请按系统提示完成更新并重新打开应用。'
-    : process.platform === 'darwin'
-      ? '下载完成后会打开 DMG，请在系统窗口中替换应用并重新打开。未签名应用无法静默替换自身。'
-      : '下载完成后会打开 AppImage；请按系统提示完成替换并重新打开应用。'
-  const choice = await dialog.showMessageBox(window, {
-    type: 'info',
-    title: 'DeepSeek NEXA 更新',
-    message: `发现 DeepSeek NEXA ${available.availableVersion}`,
-    detail: `应用会下载适合当前系统的安装包并进行 SHA-256 校验。${upstream}\n${platformDetail}`,
-    buttons: [updateLabel, '稍后'],
-    defaultId: 0,
-    cancelId: 1,
-    noLink: true,
-  })
-  if (choice.response !== 0 || window.isDestroyed()) return
-  manager.startUpdate()
-  await manager.waitForOperation()
-  const completed = manager.state()
-  if (completed.phase === 'error' && !window.isDestroyed()) {
-    await dialog.showMessageBox(window, {
-      type: 'error',
-      title: 'DeepSeek NEXA 更新',
-      message: completed.error ?? '安装包下载失败，请稍后重试。',
-      buttons: ['好'],
-      noLink: true,
-    })
-  }
 }
 
 const singleInstance = app.requestSingleInstanceLock()

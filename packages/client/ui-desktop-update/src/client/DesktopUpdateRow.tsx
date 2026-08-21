@@ -8,6 +8,7 @@ import {
 } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { DesktopUpdateKey } from './locales.ts'
 import type { DesktopUpdateState } from './update-controller.ts'
+import { installActionKey } from './update-copy.ts'
 import css from './DesktopUpdateRow.module.css'
 
 /** Registration-side business face for private desktop update operations. */
@@ -20,8 +21,8 @@ export interface DesktopUpdateRowInjected {
   load: () => Promise<void>
   /** Check the release feed now. */
   check: () => Promise<void>
-  /** Download, verify, and open the selected installer. */
-  update: () => Promise<void>
+  /** Download and verify the selected installer. */
+  download: () => Promise<void>
   /** Open the verified installer. */
   install: () => Promise<void>
   /** Persist the automatic daily-check preference. */
@@ -59,7 +60,7 @@ function statusKey(state: DesktopUpdateState): DesktopUpdateKey {
  * @returns the desktop application update row.
  */
 export function DesktopUpdateRow({
-  useUpdate, load, check, update, install, setAutomaticChecks, t,
+  useUpdate, load, check, download, install, setAutomaticChecks, t,
 }: DesktopUpdateRowProps) {
   const state = useUpdate(snapshot => snapshot)
 
@@ -121,14 +122,14 @@ export function DesktopUpdateRow({
             variant="primary"
             size="sm"
             icon={<IconDownloadOutline16 />}
-            onClick={() => { void update() }}
+            onClick={() => { void download() }}
           >
             {t('download')}
           </Button>
         )}
         {state.phase === 'downloaded' && (
           <Button variant="primary" size="sm" onClick={() => { void install() }}>
-            {t('install')}
+            {t(installActionKey(state.installer))}
           </Button>
         )}
       </div>

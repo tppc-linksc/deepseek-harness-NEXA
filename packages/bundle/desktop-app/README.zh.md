@@ -10,7 +10,7 @@ renderer 从特权标准协议 `dsh://app` 加载。`/api`、`/plugins` 和扩�
 
 该组合包会把社区 `dshmarket` 包呈现为**扩展中心**，用于发现扩展、管理生命周期、查看诊断信息与实时选择主题。其中“已安装扩展”表示扩展中心在桌面 profile 中管理或识别到的社区包；独立的**运行组件**设置分区表示 Host 当前实际加载的组件，因此两份列表不必一致。市场的普通 WebServer 路由运行在内存兼容服务上，只能通过同一个私有自定义协议桥访问。桌面感知的市场操作会获得不可变的 `desktopProfiles.current` 身份，以及通过托管 subprocess 能力运行官方 `dsh plugin --profile desktop` CLI 的 `desktopPnpm` 服务。同一时间只允许一个包操作，并且在完整进程树退出前始终视为进行中。
 
-该组合包还会把 `@deepseek-ai/dsh-client-ui-desktop-update` 作为独立的“应用更新”设置页加载。它的浏览器端调用 `dsh://app` 上的 `/_desktop/update/*`；Electron main 会在转发给 Host 前处理这些私有路由，因此更新发现、下载存储、校验与打开安装包的权限不会交给浏览器插件或 UtilityProcess。
+该组合包还会把 `@deepseek-ai/dsh-client-ui-desktop-update` 作为独立的“应用更新”设置页和左下角提醒加载。它的浏览器端调用 `dsh://app` 上的 `/_desktop/update/*`；Electron main 会在转发给 Host 前处理这些私有路由，因此更新发现、下载存储、校验与打开安装包的权限不会交给浏览器插件或 UtilityProcess。下载与交接安装包保持为两个独立操作，macOS 会在成功打开 DMG 后退出正在运行的应用。
 
 ## 模型体验
 
@@ -34,4 +34,4 @@ renderer 从特权标准协议 `dsh://app` 加载。`/api`、`/plugins` 和扩�
 - **上传请求会在跨进程前完整缓冲**：Electron main 会拒绝超过 160 MiB 的请求体；响应体仍按 pull 信号流式传输。
 - **不提供原始 socket upgrade**：普通 HTTP 与 SSE 路由可以通过自定义协议工作，但 WebSocket 及其他 `registerUpgrade()` 路由需要网络监听载体，在桌面组合阶段会快速失败。
 - **市场条目会执行第三方代码**：内置市场会把安装范围限制在其整理的目录，并默认阻止生命周期脚本，但用户在安装前仍需检查插件源码与所需能力。
-- **更新需要用户操作系统交互**：用户确认一次即可下载、校验并打开当前平台的安装包。Windows 会退出应用并进入 NSIS；macOS 与 Linux 会打开 DMG 或 AppImage。应用不会替换自身，也不会把跨平台流程描述为静默重启。
+- **更新需要用户操作系统交互**：非阻塞提醒只会在用户明确操作后开始后台下载，下载完成后的独立操作会再次校验并打开当前平台安装包。Windows 会退出应用并进入 NSIS；macOS 会在打开 DMG 后退出；Linux 会打开 AppImage。应用不会替换自身，也不会把跨平台流程描述为静默重启。

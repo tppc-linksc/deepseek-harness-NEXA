@@ -12,8 +12,7 @@ function manager(overrides: Partial<DesktopUpdateRouteManager> = {}): DesktopUpd
     state: () => state,
     check: vi.fn(async () => {}),
     startDownload: vi.fn(),
-    startUpdate: vi.fn(),
-    install: vi.fn(async () => {}),
+    startInstall: vi.fn(),
     setAutomaticChecks: vi.fn(async () => {}),
     ...overrides,
   }
@@ -40,10 +39,10 @@ describe('desktop update private routes', () => {
     expect(download?.status).toBe(202)
     expect(startDownload).toHaveBeenCalledOnce()
 
-    const startUpdate = vi.fn()
-    const update = await request('/_desktop/update/apply', 'POST', manager({ startUpdate }))
-    expect(update?.status).toBe(202)
-    expect(startUpdate).toHaveBeenCalledOnce()
+    const startInstall = vi.fn()
+    const install = await request('/_desktop/update/install', 'POST', manager({ startInstall }))
+    expect(install?.status).toBe(202)
+    expect(startInstall).toHaveBeenCalledOnce()
   })
 
   it('updates the automatic-check preference from a strict JSON body', async () => {

@@ -96,7 +96,7 @@ afterEach(async () => {
 })
 
 describe('desktop update manager', () => {
-  it('checks, downloads, verifies, and opens a compatible installer', async () => {
+  it('checks, downloads, verifies, then opens a compatible installer and quits on macOS', async () => {
     const installer = new TextEncoder().encode('verified installer')
     const manifest = release(installer)
     const fetch = vi.fn(async (input: string) => {
@@ -105,6 +105,7 @@ describe('desktop update manager', () => {
       return new Response(installer, { status: 200, headers: { 'content-length': String(installer.byteLength) } })
     })
     const openPath = vi.fn(async () => '')
+    const quit = vi.fn()
     const storageDirectory = await temporaryDirectory()
     const manager = new DesktopUpdateManager({
       currentVersion: '0.1.0-rc.5',
@@ -113,7 +114,7 @@ describe('desktop update manager', () => {
       storageDirectory,
       fetch,
       openPath,
-      quit: vi.fn(),
+      quit,
       now: () => new Date('2026-08-18T12:00:00.000Z'),
     })
     await manager.initialize()
@@ -124,7 +125,7 @@ describe('desktop update manager', () => {
       availableVersion: '0.1.0-rc.6',
       upstreamVersion: '0.1.0-rc.7',
     })
-    manager.startUpdate()
+    manager.startDownload()
     expect(manager.state()).toMatchObject({
       phase: 'downloading',
       downloadedBytes: 0,
@@ -133,8 +134,16 @@ describe('desktop update manager', () => {
     await manager.waitForOperation()
     const installerPath = join(storageDirectory, macAsset(manifest).fileName)
     expect(await readFile(installerPath)).toEqual(Buffer.from(installer))
-    expect(openPath).toHaveBeenCalledWith(installerPath)
+    expect(openPath).not.toHaveBeenCalled()
+    expect(quit).not.toHaveBeenCalled()
     expect(manager.state().phase).toBe('downloaded')
+
+    manager.startInstall()
+    expect(manager.state().phase).toBe('installing')
+    await manager.waitForOperation()
+    expect(openPath).toHaveBeenCalledWith(installerPath)
+    expect(quit).toHaveBeenCalledOnce()
+    expect(openPath.mock.invocationCallOrder[0]).toBeLessThan(quit.mock.invocationCallOrder[0]!)
   })
 
   it('reports the current version when the latest release has no manifest', async () => {
@@ -308,6 +317,38 @@ describe('desktop update manager', () => {
     await manager.waitForOperation()
     expect(manager.state()).toMatchObject({ phase: 'error', error: '安装包校验失败，请重新下载。' })
     await expect(readFile(join(storageDirectory, `${macAsset(manifest).fileName}.part`))).rejects.toMatchObject({ code: 'ENOENT' })
+  })
+
+  it('does not quit when the staged installer cannot be opened', async () => {
+    const installer = new TextEncoder().encode('verified installer')
+    const manifest = release(installer)
+    const quit = vi.fn()
+    const manager = new DesktopUpdateManager({
+      currentVersion: '0.1.0-rc.5',
+      platform: 'darwin',
+      arch: 'arm64',
+      storageDirectory: await temporaryDirectory(),
+      fetch: async (input) => {
+        if (input.startsWith('https://api.github.com/')) return response([feedRelease()])
+        if (input.endsWith('stable.json')) return response(manifest)
+        return new Response(installer, { status: 200 })
+      },
+      openPath: async () => 'Launch Services rejected the path',
+      quit,
+    })
+    await manager.initialize()
+    await manager.check()
+    manager.startDownload()
+    await manager.waitForOperation()
+
+    manager.startInstall()
+    await manager.waitForOperation()
+
+    expect(manager.state()).toMatchObject({
+      phase: 'error',
+      error: '无法打开安装包，请在下载目录中手动打开。',
+    })
+    expect(quit).not.toHaveBeenCalled()
   })
 
   it('persists the automatic-check preference and respects the daily interval', async () => {

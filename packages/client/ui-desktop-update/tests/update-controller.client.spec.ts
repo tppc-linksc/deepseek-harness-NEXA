@@ -23,6 +23,7 @@ describe('desktop update response validation', () => {
       phase: 'available',
       currentVersion: '0.1.0-rc.6',
       automaticChecks: true,
+      installer: 'dmg',
       availableVersion: '0.1.0-rc.7',
       upstreamVersion: '0.1.0-rc.7',
       releaseNotesUrl: 'https://github.com/tppc-linksc/deepseek-harness-NEXA/releases/tag/nexa-v0.1.0-rc.7',
@@ -36,6 +37,7 @@ describe('desktop update response validation', () => {
     null,
     { ...IDLE_STATE, phase: 'pending' },
     { ...IDLE_STATE, localInstallerPath: '/tmp/private.dmg' },
+    { ...IDLE_STATE, installer: 'pkg' },
     { ...IDLE_STATE, releaseNotesUrl: 'https://example.com/release' },
     { ...IDLE_STATE, downloadedBytes: -1 },
   ])('rejects invalid or private fields: %j', (value) => {
@@ -86,7 +88,7 @@ describe('DesktopUpdateController', () => {
     expect(controller.store.getSnapshot().automaticChecks).toBe(false)
   })
 
-  it('starts download and installer opening as one update action', async () => {
+  it('starts download separately from installer opening', async () => {
     const downloading = {
       ...IDLE_STATE,
       phase: 'downloading',
@@ -97,13 +99,58 @@ describe('DesktopUpdateController', () => {
     const fetcher = vi.fn().mockResolvedValue(response(downloading))
     const controller = new DesktopUpdateController(fetcher)
 
-    await controller.update()
+    await controller.download()
 
-    expect(fetcher).toHaveBeenCalledWith('/_desktop/update/apply', {
+    expect(fetcher).toHaveBeenCalledWith('/_desktop/update/download', {
       method: 'POST',
       cache: 'no-store',
     })
     expect(controller.store.getSnapshot()).toEqual(downloading)
+  })
+
+  it('requests installer handoff only after download completion', async () => {
+    const installing = {
+      ...IDLE_STATE,
+      phase: 'installing',
+      installer: 'dmg',
+      availableVersion: '0.1.0-rc.7',
+    } as const
+    const fetcher = vi.fn().mockResolvedValue(response(installing, 202))
+    const controller = new DesktopUpdateController(fetcher)
+
+    await controller.install()
+
+    expect(fetcher).toHaveBeenCalledWith('/_desktop/update/install', {
+      method: 'POST',
+      cache: 'no-store',
+    })
+    expect(controller.store.getSnapshot()).toEqual(installing)
+  })
+
+  it('lets state polling observe a long action without pinning the action lock', async () => {
+    let resolveCheck!: (value: Response) => void
+    const pendingCheck = new Promise<Response>((resolve) => { resolveCheck = resolve })
+    const checking = { ...IDLE_STATE, phase: 'checking' } as const
+    const available = {
+      ...IDLE_STATE,
+      phase: 'available',
+      installer: 'dmg',
+      availableVersion: '0.1.0-rc.7',
+    } as const
+    const fetcher = vi.fn()
+      .mockReturnValueOnce(pendingCheck)
+      .mockResolvedValueOnce(response(checking))
+      .mockResolvedValueOnce(response(available))
+    const controller = new DesktopUpdateController(fetcher)
+
+    const check = controller.check()
+    await controller.load()
+    resolveCheck(response(available))
+    await check
+    await controller.check()
+
+    expect(fetcher).toHaveBeenCalledTimes(3)
+    expect(controller.store.getSnapshot()).toEqual(available)
   })
 
   it('publishes a safe server error and ignores disposed responses', async () => {
