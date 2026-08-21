@@ -55,16 +55,20 @@ export function RemoteControlSection({
       autoPairingRequested.current = false
       return
     }
+    if (view.state.pendingDevice !== undefined) return
     if (view.offer !== null || view.busy !== null || autoPairingRequested.current) return
     autoPairingRequested.current = true
     void openPairing()
-  }, [openPairing, view.busy, view.offer, view.state.phase])
+  }, [openPairing, view.busy, view.offer, view.state.pendingDevice, view.state.phase])
   useEffect(() => {
-    if (view.offer === null) return
+    if (view.offer !== null) autoPairingRequested.current = false
+  }, [view.offer])
+  useEffect(() => {
+    if (view.offer === null || view.state.pendingDevice !== undefined) return
     const delay = Math.max(0, view.offer.expiresAt - Date.now() + 250)
     const timer = window.setTimeout(() => { void openPairing() }, delay)
     return () => { window.clearTimeout(timer) }
-  }, [openPairing, view.offer])
+  }, [openPairing, view.offer, view.state.pendingDevice])
 
   const busy = view.busy !== null
   const phaseKey = `phase.${view.state.phase}` as RemoteControlLocaleKey

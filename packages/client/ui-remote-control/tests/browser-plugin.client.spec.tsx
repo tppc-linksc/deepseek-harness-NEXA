@@ -117,11 +117,48 @@ describe('ui-remote-control browser plugin', () => {
       busy: null,
       error: null,
     })
+    await controller.load()
+    expect(controller.store.getSnapshot().offer).not.toBeNull()
     await controller.revoke('missing-phone')
     expect(controller.store.getSnapshot()).toMatchObject({
       busy: null,
       error: 'REMOTE_ERROR: device not found',
     })
+    controller.dispose()
+  })
+
+  it('removes a consumed pairing code while a phone waits for computer confirmation', async () => {
+    const pending: RemoteControlState = {
+      ...DISABLED,
+      phase: 'connected',
+      pendingDevice: { deviceId: 'phone-1', fingerprint: 'ABCDEFGH', expiresAt: Date.now() + 60_000 },
+    }
+    const confirmed: RemoteControlState = {
+      ...DISABLED,
+      phase: 'connected',
+    }
+    const remote = {
+      state: vi.fn(() => success(pending)),
+      configure: vi.fn(() => success(pending)),
+      reconnect: vi.fn(() => success(pending)),
+      openPairing: vi.fn(() => success({
+        qrDataUrl: 'data:image/png;base64,AA==', payload: 'NEXA:PAYLOAD',
+        mode: 'miniprogram-code' as const, fingerprint: 'ABCDEFGH',
+        computerName: 'My computer', expiresAt: Date.now() + 60_000,
+      })),
+      confirmPairing: vi.fn(() => success(confirmed)),
+      revoke: vi.fn(() => success(pending)),
+    } satisfies RemoteControlRemote
+    const controller = new RemoteControlController(remote)
+
+    await controller.openPairing()
+    expect(controller.store.getSnapshot().offer).not.toBeNull()
+    await controller.load()
+    expect(controller.store.getSnapshot().offer).toBeNull()
+
+    await controller.openPairing()
+    await controller.confirmPairing()
+    expect(controller.store.getSnapshot().offer).toBeNull()
     controller.dispose()
   })
 
@@ -179,5 +216,29 @@ describe('ui-remote-control browser plugin', () => {
 
     expect(screen.queryByRole('textbox', { name: 'Relay 地址' })).toBeNull()
     await waitFor(() => { expect(openPairing).toHaveBeenCalledOnce() })
+  })
+
+  it('does not replace the consumed code while a phone proposal is pending', async () => {
+    const connected: RemoteControlState = {
+      ...DISABLED,
+      phase: 'connected',
+      pendingDevice: { deviceId: 'phone-1', fingerprint: 'ABCDEFGH', expiresAt: Date.now() + 60_000 },
+    }
+    const store = createSnapshotStore({ state: connected, offer: null, busy: null, error: null })
+    const openPairing = vi.fn().mockResolvedValue(undefined)
+    const props = {
+      useRemoteControl: bindSnapshotSelector(store),
+      load: vi.fn().mockResolvedValue(undefined),
+      configure: vi.fn().mockResolvedValue(undefined),
+      reconnect: vi.fn().mockResolvedValue(undefined),
+      openPairing,
+      confirmPairing: vi.fn().mockResolvedValue(undefined),
+      revoke: vi.fn().mockResolvedValue(undefined),
+      t: (key: keyof typeof zh) => zh[key],
+    } as unknown as RemoteControlSectionProps
+
+    render(<RemoteControlSection {...props} />)
+    await new Promise(resolve => setTimeout(resolve, 10))
+    expect(openPairing).not.toHaveBeenCalled()
   })
 })

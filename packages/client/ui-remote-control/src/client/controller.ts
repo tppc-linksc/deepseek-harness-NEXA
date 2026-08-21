@@ -88,7 +88,9 @@ export class RemoteControlController {
     if (this.disposed || this.action !== null) return
     const action = Symbol('openPairing')
     this.action = action
-    this.store.update((view) => { view.busy = 'openPairing'; view.error = null })
+    // A pairing offer is single-use at the Relay. Remove the old image before
+    // asking for a new window so a user can never rescan the consumed code.
+    this.store.update((view) => { view.offer = null; view.busy = 'openPairing'; view.error = null })
     try {
       const result = await this.remote.openPairing()
       if (!result.ok) throw remoteError(result)
@@ -107,7 +109,8 @@ export class RemoteControlController {
 
   /** Confirm the phone proposal currently waiting on the Host. */
   confirmPairing(): Promise<void> {
-    return this.run('confirmPairing', () => this.remote.confirmPairing(), false)
+    // The displayed offer was consumed by the proposal being confirmed.
+    return this.run('confirmPairing', () => this.remote.confirmPairing(), true)
   }
 
   /**
@@ -155,7 +158,12 @@ export class RemoteControlController {
   }
 
   private publishState(state: RemoteControlState): void {
-    this.store.update((view) => { view.state = state })
+    this.store.update((view) => {
+      view.state = state
+      // As soon as a phone proposal exists, the Relay has consumed the window
+      // behind this QR. Keeping the image visible invites an invalid rescan.
+      if (state.pendingDevice !== undefined) view.offer = null
+    })
   }
 
   private canPublish(action?: symbol): boolean {
