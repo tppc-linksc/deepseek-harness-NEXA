@@ -26,7 +26,7 @@ One page per subsystem of the DeepSeek Harness: what it is, the data structures 
 | [tools.md](tools.md) | `ToolDefinition` full fields, the schema DSL, `ToolExecution`/`ToolResult`, tool-presentation UI types, and the guarded execution pipeline |
 | [user-questions.md](user-questions.md) | the UI-backed human question/answer seam: `AskUserQuestionRequest`, answer/options vocabulary, provider API, error taxonomy |
 | [approval.md](approval.md) | the one-shot user-approval seam: `ApprovalRequest`, `ApprovalOutcome`, per-session policy, audit events, and answerer contracts |
-| [remote-control.md](remote-control.md) | the opt-in NEXA remote-control bridge: Relay/E2EE ownership, computer-confirmed QR pairing, phone command admission, approval fallback, and revocation |
+| [remote-control.md](remote-control.md) | the opt-in NEXA thin-client bridge: sidebar QR connection, background computer-authorized pairing, desktop-owned execution, approval fallback, and revocation |
 | [attachment.md](attachment.md) | durable image identity and metadata, validation inputs, verified reads, and the `AttachmentStore` seam |
 | [shell.md](shell.md) | the bash executor seam: `ShellExecRequest`/`Spec`, `ShellRunResult`, background `ShellProcess` handles |
 | [subprocess.md](subprocess.md) | the subprocess seam: fully-explicit `SubprocessSpawnSpec`, offset-based output readers, unclassified `SubprocessOutcome`, and the managed `DSH_*` environment vocabulary |

@@ -11,7 +11,7 @@
     { "path": "../locale" },
     { "path": "../runtime" },
     { "path": "../ui-primitives" },
-    { "path": "../ui-settings" },
+    { "path": "../ui-sidebar" },
     { "path": "../ui-slots" },
     { "path": "../../interaction/qrcode-remote" },
     { "path": "../../runtime-diagnostics/invariants" }

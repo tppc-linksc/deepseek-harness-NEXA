@@ -2,9 +2,9 @@
 
 English | [中文](README.zh.md)
 
-Browser-side settings surface for `@deepseek-ai/dsh-qrcode-remote`. It contributes the **Remote Control** section to `settings.section` and uses the generated `remoteControl` Remote namespace for every Host action.
+Browser-side connection surface for `@deepseek-ai/dsh-qrcode-remote`. It contributes **Connect mobile** to `sidebar.footer.action`; opening the action creates a fresh short-lived WeChat Mini Program code and presents it in a compact popover. The only visible preference is whether this computer accepts mobile connections. Relay URLs, computer IDs, fingerprints, paired-device administration, protocol state, and manual confirmation do not enter the product surface.
 
-The section shows Relay status and the non-secret computer ID, edits the enable switch and computer name, automatically generates and refreshes an expiring WeChat Mini Program code after Relay connection, confirms a pending phone on the computer, and revokes paired phones. The managed production endpoint is never shown or editable; an explicit Host development flag enables the Relay field for local and self-hosted testing. A labeled in-Mini-Program QR fallback appears only when the Relay cannot generate a WeChat code. It polls only while the section is mounted. Private identity and session keys never cross the Remote boundary.
+The computer is the only execution authority. The Mini Program mirrors computer-owned workspaces, Sessions, messages, tool output, status, and approval requests; phone input is admitted into the selected computer Session. The two-party signed pairing exchange remains in the Host protocol, but opening the computer popover authorizes only its exact fresh challenge, allowing a successful WeChat scan to enter the mirrored Session without another confirmation or **Enter session** step. A legacy payload fallback is never presented as a user-scannable product code.
 
 ## Model Experience
 
@@ -16,5 +16,5 @@ None; this package neither assembles nor sends a provider request.
 
 ## Known Limitations and Deferred Work
 
-- The section can validate and display a Relay connection, but it cannot provision DNS, TLS, Redis, or a public Relay deployment.
-- QR pairing and WeChat SOTER still require real-device release validation.
+- The popover can report connection availability, but it cannot provision DNS, TLS, Redis, WeChat credentials, or a public Relay deployment.
+- QR pairing, reconnection after Mini Program suspension, and SOTER approval still require real-device release validation.

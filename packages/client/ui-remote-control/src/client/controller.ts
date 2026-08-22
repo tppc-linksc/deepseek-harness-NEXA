@@ -19,7 +19,7 @@ export interface RemoteControlRemote {
   revoke: (request: RemoteControlRevokeRequest) => Promise<RemoteResult<RemoteControlState>>
 }
 
-/** Complete observable state owned by the Remote Control section. */
+/** Complete observable state owned by the mobile-connection action. */
 export interface RemoteControlView {
   state: RemoteControlState
   offer: RemoteControlPairingOffer | null
@@ -45,7 +45,7 @@ function remoteError(result: Extract<RemoteResult<unknown>, { ok: false }>): Err
 
 /** Serializes explicit settings actions while allowing read-only polling. */
 export class RemoteControlController {
-  /** Snapshot observed through the settings slot's selector hook. */
+  /** Snapshot observed through the sidebar action's selector hook. */
   readonly store: SnapshotStore<RemoteControlView> = createSnapshotStore({
     state: INITIAL_STATE,
     offer: null,
@@ -71,8 +71,8 @@ export class RemoteControlController {
   }
 
   /**
-   * Save the complete preference form and publish the resulting state.
-   * @param request - edited enablement, Relay URL, and computer name.
+   * Save the typed Host preference request and publish the resulting state.
+   * @param request - connection preferences submitted by an authorized caller.
    */
   configure(request: RemoteControlConfigureRequest): Promise<void> {
     return this.run('configure', () => this.remote.configure(request), true)

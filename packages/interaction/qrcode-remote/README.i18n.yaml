@@ -2,5 +2,5 @@
 # side as of the last confirmed-consistent state. Both languages carry equal authority;
 # after editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/interaction/qrcode-remote/README.md
-README.md: a2c3192a04e4b9b7b2f1248fc3a765ab2c7f306f
-README.zh.md: e3783da608314a1ec3702504602e604d4501b96e
+README.md: 23453ba57d1497d8dac9bba814c000b56a4bbf1c
+README.zh.md: b6af30f7c549de8d84b4f9e50a36f49aa808a395

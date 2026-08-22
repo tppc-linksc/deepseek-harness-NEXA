@@ -1,4 +1,4 @@
-/** NEXA Remote bridge and settings-facing Host service. */
+/** NEXA Remote bridge and sidebar-facing Host service. */
 
 import { randomUUID } from 'node:crypto'
 import { chmodSync, existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
@@ -490,7 +490,7 @@ export class RemoteControlService extends TypertRemoteService {
   }
 
   /**
-   * Open a computer-side pairing window for the configured name.
+   * Open a computer-side pairing window and authorize only that fresh challenge.
    * @returns expiring Mini Program payload and rendered QR data URL.
    */
   @Remote('openPairing')
@@ -499,7 +499,10 @@ export class RemoteControlService extends TypertRemoteService {
     if (this.phase !== 'connected' || this.host === undefined) {
       throw new Error(this.error ?? 'remote-control: relay is not connected')
     }
-    const challenge = await this.host.openPairing({ computerName: this.preferences.computerName })
+    const challenge = await this.host.openPairing({
+      computerName: this.preferences.computerName,
+      authorizePairing: true,
+    })
     const payload = this.pairingPayload(challenge)
     const miniProgramCode = challenge.launch?.mode === 'miniprogram-code'
       ? challenge.launch.imageDataUrl

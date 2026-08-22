@@ -2,15 +2,15 @@
 
 [English](remote-control.md) | 中文
 
-[dsh-qrcode-remote](../../packages/interaction/qrcode-remote) 提供可选启用的 NEXA Remote 桥，让已配对的微信小程序查看会话、追加指令、停止正在执行的任务，或回答待处理审批，而无需创建第二套 agent 运行时。电脑始终是权威端：它持有长期身份与对端记录，请求 Relay 生成有时效且可扫码直达的小程序码，确认手机指纹，通过既有 Session API 接纳指令，并可随时撤销手机。
+[dsh-qrcode-remote](../../packages/interaction/qrcode-remote) 提供可选启用的 NEXA Remote 桥，让已配对的微信小程序查看会话、追加指令、停止正在执行的任务，或回答待处理审批，而无需创建第二套 agent 运行时。电脑是唯一执行权威：所有会话、Agent 循环、模型调用、项目与工具操作都由电脑持有。小程序只是经过移动端适配的状态投影与远程输入界面，永远不会在本地创建或执行任务。
 
 源码：[`packages/interaction/qrcode-remote/src/index.ts`](../../packages/interaction/qrcode-remote/src/index.ts)
 
 ## 连接、配对与持久化
 
-`RemoteControlService` 持有一个 NEXA `RemoteHost`，并通过 `remoteControl` Typert 命名空间公开安全的控制面。Relay 只路由不透明帧；通过 X25519 派生且经过身份认证的对端通道对应用消息进行端到端加密。生产环境固定使用且不在 UI 显示 `wss://relay.tppc.top`，只有显式开发配置才能改用自定义地址。连接后，设置会自动请求并刷新配对要约。要约请求 Relay 生成只包含随机短 `scene` 的微信小程序码；微信扫码后直接打开配对页，由页面用 `scene` 换取电脑签名且会过期的 `NEXA:` 挑战。仅服务端微信密钥不可用时，设置才会带标签地渲染旧载荷供小程序内扫码。扫码并不足以配对：设置会显示发起请求的手机指纹，只有电脑端明确确认后，手机才成为可信对端。
+`RemoteControlService` 持有一个 NEXA `RemoteHost`，并通过 `remoteControl` Typert 命名空间公开安全的控制面。Relay 只路由不透明帧；通过 X25519 派生且经过身份认证的对端通道对应用消息进行端到端加密。生产环境固定使用且不在 UI 显示 `wss://relay.tppc.top`，只有显式开发配置才能改用自定义地址。`qrcode-remote` 仍会出现在运行组件清单中，但产品入口只保留侧边栏底部的“连接移动端”操作。打开该入口会建立一个短时、单次的电脑授权窗口并显示有时效的微信小程序码；微信用随机 `scene` 换取签名 challenge，手机提交 proposal，电脑在后台对精确匹配的 challenge 签名确认，然后小程序直接打开最近的桌面会话。Relay 地址、电脑 ID、指纹、设备列表、重连按钮、小程序内扫码、二次确认和“进入会话”都不属于常规产品流程。
 
-Host 通过原子替换把电脑身份、加密通道对端密钥、偏好与撤销标记写入所配置的 `statePath`，随后强制文件权限为 `0600`。`RemoteControlState` 与 `RemoteControlPairingOffer` 是浏览器安全投影：两者都不会返回身份私钥或对端通道密钥。因此设置界面只是控制面，不是密码学身份的所有者。
+Host 通过原子替换把电脑身份、加密通道对端密钥、偏好与撤销标记写入所配置的 `statePath`，随后强制文件权限为 `0600`。`RemoteControlState` 与 `RemoteControlPairingOffer` 是浏览器安全投影：两者都不会返回身份私钥或对端通道密钥。因此侧边栏浮层只是窄连接界面，不是密码学身份所有者或设备管理控制台。
 
 ## 指令与事件边界
 
@@ -59,7 +59,7 @@ Host-owned remote connection, pairing state, and typed settings actions.
 @Remote('reconnect') async reconnect(): Promise<RemoteControlState>
 
 /**
- * Open a computer-side pairing window for the configured name.
+ * Open a computer-side pairing window and authorize only that fresh challenge.
  * @returns expiring Mini Program payload and rendered QR data URL.
  */
 @Remote('openPairing') async openPairing(): Promise<RemoteControlPairingOffer>

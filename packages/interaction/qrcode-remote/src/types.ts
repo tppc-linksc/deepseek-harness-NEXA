@@ -3,7 +3,7 @@
 /** Browser-visible lifecycle of the computer-to-Relay connection. */
 export type RemoteControlPhase = 'connected' | 'connecting' | 'disabled' | 'disconnected' | 'error'
 
-/** Persisted settings editable from the Remote Control section. */
+/** Persisted Host preferences; the product surface exposes enablement only. */
 export interface RemoteControlPreferences {
   enabled: boolean
   relayUrl: string
@@ -35,7 +35,7 @@ export interface RemoteControlConfigureRequest {
   computerName: string
 }
 
-/** Expiring pairing material displayed in settings. */
+/** Expiring pairing material displayed by the sidebar connection action. */
 export interface RemoteControlPairingOffer {
   qrDataUrl: string
   payload: string

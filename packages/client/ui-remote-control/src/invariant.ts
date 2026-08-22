@@ -1,4 +1,4 @@
-/** Package-owned invariant companion for the Remote Control settings surface. */
+/** Package-owned invariant companion for the Remote Control sidebar surface. */
 
 /* jscpd:ignore-start */
 import type { Context } from '@deepseek-ai/cordis'

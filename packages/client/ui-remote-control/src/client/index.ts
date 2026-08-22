@@ -1,46 +1,46 @@
-/** Remote Control settings registration. */
+/** Remote Control sidebar-action registration. */
 
 import type { ClientContext } from '@deepseek-ai/dsh-client-runtime/client'
 import type {} from '@deepseek-ai/dsh-client-locale/client'
-import type {} from '@deepseek-ai/dsh-client-ui-settings/client'
+import type {} from '@deepseek-ai/dsh-client-ui-sidebar/client'
 import { RemoteControlController } from './controller.ts'
-import { RemoteControlSection, type RemoteControlSectionInjected } from './RemoteControlSection.tsx'
+import { RemoteControlAction, type RemoteControlActionInjected } from './RemoteControlAction.tsx'
 import { en, zh, type RemoteControlLocaleKey } from './locales.ts'
 
 export type { RemoteControlView, RemoteControlRemote } from './controller.ts'
 export { RemoteControlController } from './controller.ts'
-export type { RemoteControlSectionInjected, RemoteControlSectionProps } from './RemoteControlSection.tsx'
+export type { RemoteControlActionInjected, RemoteControlActionProps } from './RemoteControlAction.tsx'
 export type { RemoteControlLocaleKey } from './locales.ts'
 
 declare module '@deepseek-ai/dsh-client-ui-slots' {
   interface LocaleNamespaceMap {
-    'settings.remote-control': RemoteControlLocaleKey
+    'remote-control': RemoteControlLocaleKey
   }
 }
 
-/** Locale namespace owned by the Remote Control settings contribution. */
-export const NS = 'settings.remote-control'
+/** Locale namespace owned by the Remote Control sidebar contribution. */
+export const NS = 'remote-control'
 export const inject = ['slots', 'locale', 'remote', 'remote.remoteControl']
 
 export function apply(ctx: ClientContext): void {
   ctx.effect(() => ctx.locale.register(NS, { zh, en }), 'ui-remote-control: dictionaries')
   const controller = new RemoteControlController(ctx.remote.remoteControl)
-  const injected = (): RemoteControlSectionInjected => ({
+  const injected = (): RemoteControlActionInjected => ({
     hooks: { remoteControl: controller.store },
     load: () => controller.load(),
-    configure: request => controller.configure(request),
-    reconnect: () => controller.reconnect(),
+    setEnabled: enabled => controller.configure({
+      ...controller.store.getSnapshot().state.preferences,
+      enabled,
+    }),
     openPairing: () => controller.openPairing(),
-    confirmPairing: () => controller.confirmPairing(),
-    revoke: deviceId => controller.revoke(deviceId),
   })
   ctx.effect(() => () => { controller.dispose() }, 'ui-remote-control: controller lifecycle')
-  ctx.slots.inject('settings.section', () => ctx.slots.register({
-    name: 'settings.section',
+  ctx.slots.inject('sidebar.footer.action', () => ctx.slots.register({
+    name: 'sidebar.footer.action',
     id: 'remote-control',
-    order: 40,
+    order: 80,
     label: () => ctx.locale.bind(NS)('nav'),
     locale: NS,
     inject: injected,
-  }, RemoteControlSection))
+  }, RemoteControlAction))
 }

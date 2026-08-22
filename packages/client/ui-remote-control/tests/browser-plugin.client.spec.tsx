@@ -1,16 +1,16 @@
 // @vitest-environment jsdom
 import { Context, Service } from '@deepseek-ai/cordis'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { LocaleRuntime } from '@deepseek-ai/dsh-client-locale/client'
 import { createSnapshotStore, SlotRegistry } from '@deepseek-ai/dsh-client-runtime/client'
 import { resolveSlotLabel } from '@deepseek-ai/dsh-client-ui-slots'
 import { bindSnapshotSelector, usePinnedBrowserLanguages } from '@deepseek-ai/dsh-client-test-runtime'
 import type { RemoteControlState } from '@deepseek-ai/dsh-qrcode-remote/types'
-import { RemoteControlSection } from '../src/client/RemoteControlSection.tsx'
+import { RemoteControlAction } from '../src/client/RemoteControlAction.tsx'
 import type {
-  RemoteControlSectionInjected, RemoteControlSectionProps,
-} from '../src/client/RemoteControlSection.tsx'
+  RemoteControlActionInjected, RemoteControlActionProps,
+} from '../src/client/RemoteControlAction.tsx'
 import { RemoteControlController, type RemoteControlRemote } from '../src/client/controller.ts'
 import { apply, inject, NS } from '../src/client/index.ts'
 import { zh } from '../src/client/locales.ts'
@@ -20,18 +20,35 @@ afterEach(cleanup)
 
 const DISABLED: RemoteControlState = {
   phase: 'disabled',
-  relayMode: 'custom',
+  relayMode: 'managed',
   preferences: {
     enabled: false,
-    relayUrl: 'wss://relay.example.com',
+    relayUrl: 'wss://relay.tppc.top',
     computerName: 'My computer',
   },
   computerId: 'computer-id',
   pairedDevices: [],
 }
 
+const CONNECTED: RemoteControlState = {
+  ...DISABLED,
+  phase: 'connected',
+  preferences: { ...DISABLED.preferences, enabled: true },
+}
+
 function success<T>(value: T) {
   return Promise.resolve({ ok: true as const, value })
+}
+
+function pairingOffer() {
+  return {
+    qrDataUrl: 'data:image/png;base64,AA==',
+    payload: 'NEXA:PAYLOAD',
+    mode: 'miniprogram-code' as const,
+    fingerprint: 'ABCDEFGH',
+    computerName: 'My computer',
+    expiresAt: Date.now() + 60_000,
+  }
 }
 
 async function bench() {
@@ -47,62 +64,64 @@ async function bench() {
     state: vi.fn(() => success(DISABLED)),
     configure: vi.fn(() => success(DISABLED)),
     reconnect: vi.fn(() => success(DISABLED)),
-    openPairing: vi.fn(() => success({
-      qrDataUrl: 'data:image/png;base64,AA==',
-      payload: 'NEXA:PAYLOAD',
-      mode: 'miniprogram-code' as const,
-      fingerprint: 'ABCDEFGH',
-      computerName: 'My computer',
-      expiresAt: 1_900_000_000_000,
-    })),
+    openPairing: vi.fn(() => success(pairingOffer())),
     confirmPairing: vi.fn(() => success(DISABLED)),
     revoke: vi.fn(() => success(DISABLED)),
   }
   ctx.provide('remote.remoteControl', remote)
   ctx.slots.register({
     name: 'root',
-    children: { 'settings.section': { kind: 'list', scope: 'root' } },
+    children: { 'sidebar.footer.action': { kind: 'list', scope: 'root' } },
   } as never, () => null)
   return { ctx, locale, remote }
 }
 
+function propsFor(
+  state: RemoteControlState,
+  overrides: Partial<RemoteControlActionProps> = {},
+): RemoteControlActionProps {
+  const store = createSnapshotStore({ state, offer: null, busy: null, error: null })
+  return {
+    wide: true,
+    useRemoteControl: bindSnapshotSelector(store),
+    load: vi.fn().mockResolvedValue(undefined),
+    setEnabled: vi.fn().mockResolvedValue(undefined),
+    openPairing: vi.fn().mockResolvedValue(undefined),
+    t: (key: keyof typeof zh) => zh[key],
+    ...overrides,
+  } as unknown as RemoteControlActionProps
+}
+
 describe('ui-remote-control browser plugin', () => {
-  it('registers the localized Remote Control settings section and typed actions', async () => {
+  it('registers a localized sidebar footer action instead of a Settings section', async () => {
     expect(inject).toEqual(['slots', 'locale', 'remote', 'remote.remoteControl'])
     const b = await bench()
     const fiber = b.ctx.plugin({ inject: [...inject], apply })
     await fiber.await()
 
-    const entry = b.ctx.slots.entries('settings.section')[0]!
-    expect(entry.component).toBe(RemoteControlSection)
-    expect(entry.options).toMatchObject({ id: 'remote-control', order: 40 })
+    const entry = b.ctx.slots.entries('sidebar.footer.action')[0]!
+    expect(entry.component).toBe(RemoteControlAction)
+    expect(entry.options).toMatchObject({ id: 'remote-control', order: 80 })
     expect(entry.locale).toBe(NS)
-    expect(resolveSlotLabel(entry.options.label)).toBe('远程操控')
-    const injected = (entry.inject as unknown as () => RemoteControlSectionInjected)()
+    expect(resolveSlotLabel(entry.options.label)).toBe('连接移动端')
+    const injected = (entry.inject as unknown as () => RemoteControlActionInjected)()
     await injected.load()
     expect(injected.hooks.remoteControl.getSnapshot().state).toEqual(DISABLED)
     expect(b.remote.state).toHaveBeenCalledOnce()
 
     b.locale.setLocale('en')
-    expect(resolveSlotLabel(entry.options.label)).toBe('Remote Control')
+    expect(resolveSlotLabel(entry.options.label)).toBe('Connect mobile')
     await fiber.dispose()
-    expect(b.ctx.slots.entries('settings.section')).toHaveLength(0)
+    expect(b.ctx.slots.entries('sidebar.footer.action')).toHaveLength(0)
     await b.ctx.fiber.dispose()
   })
 
-  it('publishes pairing offers and preserves a safe error for failed actions', async () => {
+  it('publishes pairing offers and preserves a safe error for failed Host actions', async () => {
     const remote = {
       state: vi.fn(() => success(DISABLED)),
       configure: vi.fn(() => success(DISABLED)),
       reconnect: vi.fn(() => success(DISABLED)),
-      openPairing: vi.fn(() => success({
-        qrDataUrl: 'data:image/png;base64,AA==',
-        payload: 'NEXA:PAYLOAD',
-        mode: 'miniprogram-code' as const,
-        fingerprint: 'ABCDEFGH',
-        computerName: 'My computer',
-        expiresAt: 1_900_000_000_000,
-      })),
+      openPairing: vi.fn(() => success(pairingOffer())),
       confirmPairing: vi.fn(() => success(DISABLED)),
       revoke: vi.fn().mockResolvedValue({
         ok: false,
@@ -117,8 +136,6 @@ describe('ui-remote-control browser plugin', () => {
       busy: null,
       error: null,
     })
-    await controller.load()
-    expect(controller.store.getSnapshot().offer).not.toBeNull()
     await controller.revoke('missing-phone')
     expect(controller.store.getSnapshot()).toMatchObject({
       busy: null,
@@ -127,26 +144,17 @@ describe('ui-remote-control browser plugin', () => {
     controller.dispose()
   })
 
-  it('removes a consumed pairing code while a phone waits for computer confirmation', async () => {
+  it('removes a consumed pairing code while the invisible handshake completes', async () => {
     const pending: RemoteControlState = {
-      ...DISABLED,
-      phase: 'connected',
+      ...CONNECTED,
       pendingDevice: { deviceId: 'phone-1', fingerprint: 'ABCDEFGH', expiresAt: Date.now() + 60_000 },
-    }
-    const confirmed: RemoteControlState = {
-      ...DISABLED,
-      phase: 'connected',
     }
     const remote = {
       state: vi.fn(() => success(pending)),
       configure: vi.fn(() => success(pending)),
       reconnect: vi.fn(() => success(pending)),
-      openPairing: vi.fn(() => success({
-        qrDataUrl: 'data:image/png;base64,AA==', payload: 'NEXA:PAYLOAD',
-        mode: 'miniprogram-code' as const, fingerprint: 'ABCDEFGH',
-        computerName: 'My computer', expiresAt: Date.now() + 60_000,
-      })),
-      confirmPairing: vi.fn(() => success(confirmed)),
+      openPairing: vi.fn(() => success(pairingOffer())),
+      confirmPairing: vi.fn(() => success(CONNECTED)),
       revoke: vi.fn(() => success(pending)),
     } satisfies RemoteControlRemote
     const controller = new RemoteControlController(remote)
@@ -155,90 +163,50 @@ describe('ui-remote-control browser plugin', () => {
     expect(controller.store.getSnapshot().offer).not.toBeNull()
     await controller.load()
     expect(controller.store.getSnapshot().offer).toBeNull()
-
-    await controller.openPairing()
-    await controller.confirmPairing()
-    expect(controller.store.getSnapshot().offer).toBeNull()
     controller.dispose()
   })
 
-  it('does not overwrite an in-progress Relay edit when polling returns equivalent preferences', () => {
-    const store = createSnapshotStore({ state: DISABLED, offer: null, busy: null, error: null })
-    const props = {
-      useRemoteControl: bindSnapshotSelector(store),
-      load: vi.fn().mockResolvedValue(undefined),
-      configure: vi.fn().mockResolvedValue(undefined),
-      reconnect: vi.fn().mockResolvedValue(undefined),
-      openPairing: vi.fn().mockResolvedValue(undefined),
-      confirmPairing: vi.fn().mockResolvedValue(undefined),
-      revoke: vi.fn().mockResolvedValue(undefined),
-      t: (key: keyof typeof zh) => zh[key],
-    } as unknown as RemoteControlSectionProps
-    render(<RemoteControlSection {...props} />)
-    const relayInput = screen.getByRole('textbox', { name: 'Relay 地址' }) as HTMLInputElement
-
-    fireEvent.change(relayInput, { target: { value: 'wss://editing.example.com' } })
-    act(() => {
-      store.set({
-        ...store.getSnapshot(),
-        state: { ...DISABLED, preferences: { ...DISABLED.preferences } },
-      })
-    })
-
-    expect(relayInput.value).toBe('wss://editing.example.com')
-  })
-
-  it('hides the managed Relay and generates a pairing code automatically after connection', async () => {
-    const connected: RemoteControlState = {
-      ...DISABLED,
-      phase: 'connected',
-      relayMode: 'managed',
-      preferences: {
-        ...DISABLED.preferences,
-        enabled: true,
-        relayUrl: 'wss://relay.tppc.top',
-      },
-    }
-    const store = createSnapshotStore({ state: connected, offer: null, busy: null, error: null })
+  it('opens a compact popover and automatically requests the computer-specific code', async () => {
     const openPairing = vi.fn().mockResolvedValue(undefined)
-    const props = {
-      useRemoteControl: bindSnapshotSelector(store),
-      load: vi.fn().mockResolvedValue(undefined),
-      configure: vi.fn().mockResolvedValue(undefined),
-      reconnect: vi.fn().mockResolvedValue(undefined),
-      openPairing,
-      confirmPairing: vi.fn().mockResolvedValue(undefined),
-      revoke: vi.fn().mockResolvedValue(undefined),
-      t: (key: keyof typeof zh) => zh[key],
-    } as unknown as RemoteControlSectionProps
+    render(<RemoteControlAction {...propsFor(CONNECTED, { openPairing })} />)
 
-    render(<RemoteControlSection {...props} />)
+    fireEvent.click(screen.getByRole('button', { name: '连接移动端' }))
 
-    expect(screen.queryByRole('textbox', { name: 'Relay 地址' })).toBeNull()
+    expect(await screen.findByRole('region', { name: '连接移动端' })).toBeTruthy()
+    expect(screen.getByRole<HTMLInputElement>('checkbox', { name: '允许移动端连接此设备' }).checked)
+      .toBe(true)
+    expect(screen.queryByText('Relay 地址')).toBeNull()
+    expect(screen.queryByText('电脑 ID')).toBeNull()
+    expect(screen.queryByText('电脑指纹')).toBeNull()
     await waitFor(() => { expect(openPairing).toHaveBeenCalledOnce() })
   })
 
-  it('does not replace the consumed code while a phone proposal is pending', async () => {
-    const connected: RemoteControlState = {
-      ...DISABLED,
-      phase: 'connected',
-      pendingDevice: { deviceId: 'phone-1', fingerprint: 'ABCDEFGH', expiresAt: Date.now() + 60_000 },
-    }
-    const store = createSnapshotStore({ state: connected, offer: null, busy: null, error: null })
-    const openPairing = vi.fn().mockResolvedValue(undefined)
-    const props = {
-      useRemoteControl: bindSnapshotSelector(store),
-      load: vi.fn().mockResolvedValue(undefined),
-      configure: vi.fn().mockResolvedValue(undefined),
-      reconnect: vi.fn().mockResolvedValue(undefined),
-      openPairing,
-      confirmPairing: vi.fn().mockResolvedValue(undefined),
-      revoke: vi.fn().mockResolvedValue(undefined),
-      t: (key: keyof typeof zh) => zh[key],
-    } as unknown as RemoteControlSectionProps
+  it('shows the generated WeChat code without confirmation or enter-session controls', () => {
+    const store = createSnapshotStore({
+      state: CONNECTED,
+      offer: pairingOffer(),
+      busy: null,
+      error: null,
+    })
+    const props = propsFor(CONNECTED, { useRemoteControl: bindSnapshotSelector(store) })
+    render(<RemoteControlAction {...props} />)
 
-    render(<RemoteControlSection {...props} />)
-    await new Promise(resolve => setTimeout(resolve, 10))
-    expect(openPairing).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('button', { name: '连接移动端' }))
+
+    expect(screen.getByRole('img', { name: '连接这台电脑的微信小程序码' })).toBeTruthy()
+    expect(screen.getByText('使用微信扫码连接电脑')).toBeTruthy()
+    expect(screen.queryByRole('button', { name: '确认配对' })).toBeNull()
+    expect(screen.queryByRole('button', { name: '进入会话' })).toBeNull()
+  })
+
+  it('keeps the enable switch as the only visible preference', () => {
+    const setEnabled = vi.fn().mockResolvedValue(undefined)
+    render(<RemoteControlAction {...propsFor(DISABLED, { setEnabled })} />)
+
+    fireEvent.click(screen.getByRole('button', { name: '连接移动端' }))
+    fireEvent.click(screen.getByRole('checkbox', { name: '允许移动端连接此设备' }))
+
+    expect(setEnabled).toHaveBeenCalledWith(true)
+    expect(screen.queryByRole('textbox')).toBeNull()
   })
 })

@@ -1123,7 +1123,7 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
       },
       {
         signature: '@Remote(\'openPairing\') async openPairing(): Promise<RemoteControlPairingOffer>',
-        description: 'Open a computer-side pairing window for the configured name.',
+        description: 'Open a computer-side pairing window and authorize only that fresh challenge.',
         parameters: [],
         returns: 'expiring Mini Program payload and rendered QR data URL.',
       },

@@ -4,6 +4,8 @@ Status: implemented
 
 [English](2026-08-21-nexa-remote-control.md) | 中文
 
+> 本历史记录中的产品入口与确认细节已由 [NEXA Remote 薄客户端流程](2026-08-22-nexa-remote-thin-client.md) 取代；Host 所有权、加密协议边界与 Cordis 组件身份继续有效。
+
 ## 问题
 
 NEXA Remote 微信小程序与 Relay 已存在于独立仓库，但 DeepSeek Harness NEXA 尚无面向生产的 Host 适配层和产品入口。配对依赖独立二维码生成端，用户无法在设置中查看或解除手机，手机指令也没有明确复用本地 Web 输入的准入与审批边界。

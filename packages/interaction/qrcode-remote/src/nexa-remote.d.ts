@@ -107,7 +107,11 @@ declare module 'nexa-remote/host' {
     onPairingPendingUser?: (proposal: NexaPairingProposal) => void
     start(): Promise<void>
     close(): void
-    openPairing(options?: { ttlMs?: number; computerName?: string }): Promise<NexaPairingChallenge>
+    openPairing(options?: {
+      ttlMs?: number
+      computerName?: string
+      authorizePairing?: boolean
+    }): Promise<NexaPairingChallenge>
     confirmPendingPairing(): boolean
     requestApproval(request: {
       approvalId: string

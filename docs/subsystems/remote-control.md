@@ -2,15 +2,15 @@
 
 English | [中文](remote-control.zh.md)
 
-The opt-in NEXA Remote bridge in [dsh-qrcode-remote](../../packages/interaction/qrcode-remote) lets a paired WeChat Mini Program observe sessions, append an instruction, stop an active run, or answer a pending approval without creating a second agent runtime. The computer remains authoritative: it owns the long-term identity and peer records, requests an expiring direct-launch Mini Program code from the Relay, confirms the phone fingerprint, admits commands through the existing Session API, and may revoke a phone at any time.
+The opt-in NEXA Remote bridge in [dsh-qrcode-remote](../../packages/interaction/qrcode-remote) lets a paired WeChat Mini Program observe sessions, append an instruction, stop an active run, or answer a pending approval without creating a second agent runtime. The computer is the only execution authority: it owns every session, Agent loop, model call, project and tool action. The Mini Program is only a mobile-adapted projection plus a remote-input surface; it never creates or executes a local task.
 
 Source: [`packages/interaction/qrcode-remote/src/index.ts`](../../packages/interaction/qrcode-remote/src/index.ts)
 
 ## Connection, pairing, and persistence
 
-`RemoteControlService` owns one NEXA `RemoteHost` and exposes its safe control plane through the `remoteControl` Typert namespace. The Relay only routes opaque frames; authenticated X25519-derived peer channels encrypt application messages end to end. Production uses the fixed, UI-hidden `wss://relay.tppc.top` endpoint; only explicit development configuration permits a custom address. Once connected, Settings automatically requests and refreshes a pairing offer. The offer asks the Relay for a WeChat Mini Program code containing only a short random `scene`; WeChat opens the pairing page directly, and the page exchanges `scene` for the signed, expiring `NEXA:` challenge. If server-only WeChat credentials are unavailable, Settings labels and renders the legacy payload for in-Mini-Program scanning. Scanning is not sufficient: Settings shows the proposed phone fingerprint and requires explicit confirmation on the computer before the peer becomes trusted.
+`RemoteControlService` owns one NEXA `RemoteHost` and exposes its safe control plane through the `remoteControl` Typert namespace. The Relay only routes opaque frames; authenticated X25519-derived peer channels encrypt application messages end to end. Production uses the fixed, UI-hidden `wss://relay.tppc.top` endpoint; only explicit development configuration permits a custom address. `qrcode-remote` remains visible in the runtime component inventory, while its product entry is a single **Connect mobile** action in the sidebar footer. Opening that action establishes a short, single-use computer authorization window and renders an expiring WeChat Mini Program code. WeChat exchanges the random `scene` for the signed challenge, completes the phone proposal, receives the matching computer signature in the background, and opens the latest desktop session directly. Relay endpoints, computer IDs, fingerprints, device lists, reconnect buttons, an in-Mini-Program scanner, a second confirmation, and an “enter session” step are not part of the normal product flow.
 
-The Host persists the computer identity, encrypted-channel peer keys, preferences, and revocation markers by atomic replacement at the configured `statePath`, then enforces file mode `0600`. `RemoteControlState` and `RemoteControlPairingOffer` are browser-safe projections: neither returns a private identity key nor a peer channel key. The settings UI is therefore a control surface, not a cryptographic owner.
+The Host persists the computer identity, encrypted-channel peer keys, preferences, and revocation markers by atomic replacement at the configured `statePath`, then enforces file mode `0600`. `RemoteControlState` and `RemoteControlPairingOffer` are browser-safe projections: neither returns a private identity key nor a peer channel key. The sidebar popover is therefore only a narrow connection surface, not a cryptographic owner or device-management console.
 
 ## Command and event boundary
 
@@ -59,7 +59,7 @@ Host-owned remote connection, pairing state, and typed settings actions.
 @Remote('reconnect') async reconnect(): Promise<RemoteControlState>
 
 /**
- * Open a computer-side pairing window for the configured name.
+ * Open a computer-side pairing window and authorize only that fresh challenge.
  * @returns expiring Mini Program payload and rendered QR data URL.
  */
 @Remote('openPairing') async openPairing(): Promise<RemoteControlPairingOffer>

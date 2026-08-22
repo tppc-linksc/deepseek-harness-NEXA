@@ -4,6 +4,8 @@ Status: implemented
 
 English | [中文](2026-08-21-nexa-remote-control.zh.md)
 
+> Product-surface and confirmation details in this historical note are superseded by the [NEXA Remote thin-client flow](2026-08-22-nexa-remote-thin-client.md). The Host ownership, encrypted protocol boundary, and Cordis component identity remain in force.
+
 ## Problem
 
 The NEXA Remote WeChat Mini Program and Relay existed as a separate repository, but DeepSeek Harness NEXA had no production Host adapter or product surface for it. Pairing required a separate QR generator, users could not inspect or revoke phones inside settings, and phone instructions had no defined route into the same admission and approval boundaries as local Web input.
