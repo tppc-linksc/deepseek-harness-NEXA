@@ -6,6 +6,8 @@ Host-side integration between DeepSeek Harness NEXA and NEXA Remote. The Web and
 
 The computer is the sole execution authority. The Mini Program mirrors computer-owned workspaces, Sessions, messages, tool output, status, and approval requests; it does not run an Agent, call a model, access project files, or execute tools. Phone instructions enter through `ctx.apiProxy.sessions.prompt`, wait for the addressed Agent to become idle, and return their final status. DSH approval requests are offered to a paired phone through the existing `approval/request` waterfall; an absent phone falls through to the local answerer, while a phone grant can only return `allowed-once`.
 
+The mobile event stream follows the desktop information hierarchy. Ordinary messages render directly; tool calls expose a concise action plus the concrete command, file, or test target, while arguments, progress logs, and results stay collapsed until requested. Desktop Markdown results render through a safe Mini Program subset. The desktop `running` snapshot selects the phone's send or stop action, and a phone stop request reaches the same Session cancellation API. History is byte-paged below the Relay frame limit, so a large terminal result cannot strand the mobile client in a reconnect or loading state.
+
 ## Configuration
 
 | key | meaning |

@@ -2,5 +2,5 @@
 # side as of the last confirmed-consistent state. Both languages carry equal authority;
 # after editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-08-22-nexa-remote-thin-client.md
-2026-08-22-nexa-remote-thin-client.md: 39259dd5457f9b4d6fb0e1fa63882d0f7280aa1c
-2026-08-22-nexa-remote-thin-client.zh.md: 878d2055aa7dbc584859db321e513145cd0441f6
+2026-08-22-nexa-remote-thin-client.md: 01f475b6fbb086a9658f685cf28df58336763b7d
+2026-08-22-nexa-remote-thin-client.zh.md: 9fb554fa80023dda8b637556de16782e2e3beb1a

@@ -18,6 +18,8 @@ Make the WeChat Mini Program a strict thin client. WeChat scanning launches the 
 
 Treat connection recovery as infrastructure, not a user workflow. The Host reports connected only after transport authentication, retries unexpected Relay loss with bounded exponential backoff, and restarts a stale connection when the popover asks for a new pairing window. The Mini Program uses task-bound socket callbacks and reconnects after suspension or network changes. A successful desktop state refresh clears a previous transient connection error.
 
+Project the same desktop information hierarchy rather than raw execution telemetry. The Mini Program shows ordinary messages and concise tool actions with the concrete command, file, or test target; it keeps arguments, process logs, and results collapsed until requested and renders Markdown through a safe subset. The desktop `running` snapshot selects send or stop, and phone cancellation is routed to the computer Session. History pages use an encoded byte budget below the Relay frame ceiling, because a count-limited page can still exceed the transport limit when one tool returns a large terminal result. Authenticated business frames override delayed offline presence.
+
 ## Alternatives considered
 
 **Keep the full Settings console and improve its styling.** Styling cannot fix a workflow whose product surface asks users to understand Relay and identity internals. Those controls are useful for diagnostics but are not normal tasks.
@@ -34,6 +36,7 @@ Treat connection recovery as infrastructure, not a user workflow. The Host repor
 - A proposal for a different, expired, replaced, or already consumed challenge is never auto-confirmed.
 - The Mini Program renders only computer-sourced workspaces, all non-archived Sessions, history, live events, questions, and approvals; every mutation is a request to the desktop Host and every final state comes back from the computer.
 - Desktop and Mini Program transports recover automatically from transient disconnects without exposing Relay controls to the user.
+- Large desktop history cannot overflow one Relay frame; mobile tool detail stays collapsed, Markdown renders safely, and send/stop mirrors the desktop run state.
 - Settings, package docs, subsystem docs, product docs, tests, and snapshots describe the same thin-client boundary.
 
 The simpler flow makes the explicit desktop act of opening the code and the exact challenge match security-critical, so tests pin that authorization cannot float across challenges. Direct navigation exposes loading and reconnect races that the old intermediate pages masked, requiring deterministic bootstrap and peer-restoration coverage. The compact popover intentionally gives up inline diagnostics; failures use short user copy and developer-visible logs instead of returning technical fields to the product UI.
@@ -42,4 +45,4 @@ The simpler flow makes the explicit desktop act of opening the code and the exac
 
 The desktop client now registers one `sidebar.footer.trailing` icon and renders a compact code popover instead of a Settings section. `qrcode-remote` issues an exact, single-use authorized challenge, while the Host preserves the signed two-phase protocol and rejects mismatched or stale proposals. The Host and Mini Program restore authenticated transports after transient disconnects, and the Mini Program projects blank as well as active non-archived desktop Sessions.
 
-Focused sidebar, remote-control client, and Host-adapter tests pass (9 files, 42 tests), including footer geometry, stale-error recovery, authenticated connection state, and inclusion of a blank Session. The pinned NEXA Remote dependency separately passes its crypto, envelope, Relay, Host, Mini Program, and end-to-end suites. The existing full GUI and Web-build verification remains the baseline for the broader thin-client change.
+Focused sidebar, remote-control client, and Host-adapter tests cover footer geometry, stale-error recovery, authenticated connection state, and inclusion of a blank Session. The pinned NEXA Remote dependency separately passes its crypto, envelope, Relay, Host, Mini Program, and end-to-end suites, including oversized byte-paged history, compact tool cards, safe Markdown, the mobile drawer, and desktop-authoritative run/stop state. Full GUI, documentation, Web-build, and desktop-package gates remain the broader thin-client release baseline.
