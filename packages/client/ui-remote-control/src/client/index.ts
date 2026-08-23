@@ -35,8 +35,8 @@ export function apply(ctx: ClientContext): void {
     openPairing: () => controller.openPairing(),
   })
   ctx.effect(() => () => { controller.dispose() }, 'ui-remote-control: controller lifecycle')
-  ctx.slots.inject('sidebar.footer.action', () => ctx.slots.register({
-    name: 'sidebar.footer.action',
+  ctx.slots.inject('sidebar.footer.trailing', () => ctx.slots.register({
+    name: 'sidebar.footer.trailing',
     id: 'remote-control',
     order: 80,
     label: () => ctx.locale.bind(NS)('nav'),

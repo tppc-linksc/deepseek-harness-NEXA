@@ -20,7 +20,7 @@ Electron main 提供 desktop profile、Harness home、命令运行目录、打�
 
 ## 扩展 UI 组合
 
-`sidebar.footer.action` 列表在“设置”上方使用单列网格。每个注册项占据一行，直接子项会被限制在侧边栏宽度内，因此某个扩展的 flex 方向、换行或 flex-basis 规则无法再把同级入口移动到隐藏的横向列。收起后的窄栏为每项分配一个 36 像素行。各注册项仍持有自身按钮与 portalled panel 的呈现。
+`sidebar.footer.action` 列表在页脚行上方使用单列网格。每个全宽注册项占据一行，直接子项会被限制在侧边栏宽度内。底部页脚行让 `sidebar.settings` 占据剩余宽度，并在右侧渲染紧凑的 `sidebar.footer.trailing` 图标操作；NEXA Remote 使用这个位置放置 36 像素连接图标。收起后的窄栏会纵向排列同一组控件。各注册项仍持有自身按钮与 portalled panel 的呈现。
 
 源码：[`packages/client/ui-sidebar/src/client/SidebarRoot.module.css`](../../packages/client/ui-sidebar/src/client/SidebarRoot.module.css)
 

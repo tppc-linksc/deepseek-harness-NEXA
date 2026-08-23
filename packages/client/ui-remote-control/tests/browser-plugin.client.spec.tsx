@@ -71,7 +71,7 @@ async function bench() {
   ctx.provide('remote.remoteControl', remote)
   ctx.slots.register({
     name: 'root',
-    children: { 'sidebar.footer.action': { kind: 'list', scope: 'root' } },
+    children: { 'sidebar.footer.trailing': { kind: 'list', scope: 'root' } },
   } as never, () => null)
   return { ctx, locale, remote }
 }
@@ -93,13 +93,13 @@ function propsFor(
 }
 
 describe('ui-remote-control browser plugin', () => {
-  it('registers a localized sidebar footer action instead of a Settings section', async () => {
+  it('registers a localized compact action beside Settings', async () => {
     expect(inject).toEqual(['slots', 'locale', 'remote', 'remote.remoteControl'])
     const b = await bench()
     const fiber = b.ctx.plugin({ inject: [...inject], apply })
     await fiber.await()
 
-    const entry = b.ctx.slots.entries('sidebar.footer.action')[0]!
+    const entry = b.ctx.slots.entries('sidebar.footer.trailing')[0]!
     expect(entry.component).toBe(RemoteControlAction)
     expect(entry.options).toMatchObject({ id: 'remote-control', order: 80 })
     expect(entry.locale).toBe(NS)
@@ -112,7 +112,7 @@ describe('ui-remote-control browser plugin', () => {
     b.locale.setLocale('en')
     expect(resolveSlotLabel(entry.options.label)).toBe('Connect mobile')
     await fiber.dispose()
-    expect(b.ctx.slots.entries('sidebar.footer.action')).toHaveLength(0)
+    expect(b.ctx.slots.entries('sidebar.footer.trailing')).toHaveLength(0)
     await b.ctx.fiber.dispose()
   })
 
@@ -141,6 +141,29 @@ describe('ui-remote-control browser plugin', () => {
       busy: null,
       error: 'REMOTE_ERROR: device not found',
     })
+    controller.dispose()
+  })
+
+  it('clears a stale transport error after state polling recovers', async () => {
+    const remote = {
+      state: vi.fn()
+        .mockResolvedValueOnce({
+          ok: false,
+          error: { code: 'REMOTE_ERROR', message: 'transport unavailable' },
+        })
+        .mockImplementation(() => success(CONNECTED)),
+      configure: vi.fn(() => success(CONNECTED)),
+      reconnect: vi.fn(() => success(CONNECTED)),
+      openPairing: vi.fn(() => success(pairingOffer())),
+      confirmPairing: vi.fn(() => success(CONNECTED)),
+      revoke: vi.fn(() => success(CONNECTED)),
+    } satisfies RemoteControlRemote
+    const controller = new RemoteControlController(remote)
+
+    await controller.load()
+    expect(controller.store.getSnapshot().error).toBe('REMOTE_ERROR: transport unavailable')
+    await controller.load()
+    expect(controller.store.getSnapshot()).toMatchObject({ state: CONNECTED, error: null })
     controller.dispose()
   })
 

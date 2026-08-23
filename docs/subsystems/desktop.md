@@ -20,7 +20,7 @@ Source: [`packages/bundle/desktop-app/src/portless-webserver.ts`](../../packages
 
 ## Extension UI composition
 
-The `sidebar.footer.action` list is a one-column grid above Settings. Every registrant receives one row, and direct children are constrained to the sidebar width, so an extension's flex direction, wrapping, or flex-basis rules cannot move sibling entries into a hidden horizontal column. The collapsed rail assigns one 36-pixel row per action. Registrants continue to own their button and portalled-panel presentation.
+The `sidebar.footer.action` list is a one-column grid above the footer row. Every full-width registrant receives one row, and direct children are constrained to the sidebar width. The bottom row gives `sidebar.settings` the remaining width and renders compact `sidebar.footer.trailing` icon actions at the right edge; NEXA Remote uses that seat for its 36-pixel connection icon. The collapsed rail stacks the same controls vertically. Registrants continue to own their buttons and portalled-panel presentation.
 
 Source: [`packages/client/ui-sidebar/src/client/SidebarRoot.module.css`](../../packages/client/ui-sidebar/src/client/SidebarRoot.module.css)
 

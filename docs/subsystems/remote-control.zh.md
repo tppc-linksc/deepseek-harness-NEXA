@@ -8,13 +8,15 @@
 
 ## 连接、配对与持久化
 
-`RemoteControlService` 持有一个 NEXA `RemoteHost`，并通过 `remoteControl` Typert 命名空间公开安全的控制面。Relay 只路由不透明帧；通过 X25519 派生且经过身份认证的对端通道对应用消息进行端到端加密。生产环境固定使用且不在 UI 显示 `wss://relay.tppc.top`，只有显式开发配置才能改用自定义地址。`qrcode-remote` 仍会出现在运行组件清单中，但产品入口只保留侧边栏底部的“连接移动端”操作。打开该入口会建立一个短时、单次的电脑授权窗口并显示有时效的微信小程序码；微信用随机 `scene` 换取签名 challenge，手机提交 proposal，电脑在后台对精确匹配的 challenge 签名确认，然后小程序直接打开最近的桌面会话。Relay 地址、电脑 ID、指纹、设备列表、重连按钮、小程序内扫码、二次确认和“进入会话”都不属于常规产品流程。
+`RemoteControlService` 持有一个 NEXA `RemoteHost`，并通过 `remoteControl` Typert 命名空间公开安全的控制面。Relay 只路由不透明帧；通过 X25519 派生且经过身份认证的对端通道对应用消息进行端到端加密。生产环境固定使用且不在 UI 显示 `wss://relay.tppc.top`，只有显式开发配置才能改用自定义地址。`qrcode-remote` 仍会出现在运行组件清单中，但产品入口只保留 `sidebar.footer.trailing` 中紧邻“设置”右侧的“连接移动端”小图标。打开该图标会建立一个短时、单次的电脑授权窗口并显示有时效的微信小程序码；微信用随机 `scene` 换取签名 challenge，手机提交 proposal，电脑在后台对精确匹配的 challenge 签名确认，然后小程序直接打开最近的桌面会话。Relay 地址、电脑 ID、指纹、设备列表、重连按钮、小程序内扫码、二次确认和“进入会话”都不属于常规产品流程。
+
+连接状态以 Host 完成身份认证的传输为准。Relay 意外断开后，服务会按有上限的指数退避自动重试；请求配对窗口时会重启已经失效的 Host；成功刷新状态后会清除浏览器端短时错误。因此网络变化后入口仍能自行恢复，而无需向用户暴露手动 Relay 控制台。
 
 Host 通过原子替换把电脑身份、加密通道对端密钥、偏好与撤销标记写入所配置的 `statePath`，随后强制文件权限为 `0600`。`RemoteControlState` 与 `RemoteControlPairingOffer` 是浏览器安全投影：两者都不会返回身份私钥或对端通道密钥。因此侧边栏浮层只是窄连接界面，不是密码学身份所有者或设备管理控制台。
 
 ## 指令与事件边界
 
-手机不会直接调用 Agent 实现。`DshRemoteHarnessAdapter` 把 `append_instruction` 映射到采用队列准入的 `ctx.apiProxy.sessions.prompt`，把 `stop` 映射到 Session 取消 API；它拒绝其他所有动作，等待目标 Agent 进入空闲状态，再返回最终接受或拒绝结果。会话事件与有界快照通过加密的 NEXA 通道返回，因此 Host 仍是会话事实的唯一来源。
+手机不会直接调用 Agent 实现。`DshRemoteHarnessAdapter` 把 `append_instruction` 映射到采用队列准入的 `ctx.apiProxy.sessions.prompt`，把 `stop` 映射到 Session 取消 API；它拒绝其他所有动作，等待目标 Agent 进入空闲状态，再返回最终接受或拒绝结果。会话事件与有界快照通过加密的 NEXA 通道返回，因此 Host 仍是会话事实的唯一来源。快照包含每个未归档的桌面会话，包括刚创建的空白会话；只有已归档会话和 subagent 会话不进入移动端主列表。
 
 ## 审批回退
 

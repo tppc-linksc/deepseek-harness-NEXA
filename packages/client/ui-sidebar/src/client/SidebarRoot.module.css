@@ -312,6 +312,21 @@
   width: 100%;
 }
 
+.footerRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  min-width: 0;
+  width: 100%;
+}
+
+.footerTrailing {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-width: 0;
+}
+
 .footerActions {
   flex: none;
   min-width: 0;
@@ -335,6 +350,17 @@
   display: flex;
   justify-content: center;
   width: auto;
+}
+
+.collapsed .footerRow {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: auto;
+}
+
+.collapsed .footerTrailing {
+  justify-content: center;
 }
 
 .collapsed .footerActions {

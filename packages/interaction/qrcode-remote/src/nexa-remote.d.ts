@@ -102,11 +102,13 @@ declare module 'nexa-remote/host' {
       harness: NexaHarnessAdapter
       log?: Pick<Console, 'debug' | 'error' | 'info' | 'warn'>
       onPeerChanged?: (deviceId: string, peer: NexaPeer) => void
+      onConnectionChange?: (connected: boolean, reason: string) => void
     })
     pendingProposal: NexaPairingProposal | null
     onPairingPendingUser?: (proposal: NexaPairingProposal) => void
     start(): Promise<void>
     close(): void
+    isConnected(): boolean
     openPairing(options?: {
       ttlMs?: number
       computerName?: string

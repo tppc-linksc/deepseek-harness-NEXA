@@ -73,6 +73,8 @@ describe('SidebarRoot.module.css', () => {
     expect(declarations('.collapsed .footerActions')?.get('display')).toBe('grid')
     expect(declarations('.collapsed .footerActions')?.get('grid-template-columns')).toBe('36px')
     expect(declarations('.collapsed .footerActions')?.get('justify-items')).toBe('center')
+    expect(declarations('.footerRow')?.get('grid-template-columns')).toBe('minmax(0, 1fr) auto')
+    expect(declarations('.footerTrailing')?.get('justify-content')).toBe('flex-end')
   })
 
   it('keeps the slotted brand row at the full artwork height', () => {

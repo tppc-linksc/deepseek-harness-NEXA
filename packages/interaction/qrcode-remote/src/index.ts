@@ -402,6 +402,8 @@ export class RemoteControlService extends TypertRemoteService {
   private phase: RemoteControlPhase = 'disconnected'
   private error: string | undefined
   private generation = 0
+  private reconnectTimer: ReturnType<typeof setTimeout> | undefined
+  private reconnectDelayMs = 1_000
 
   constructor(ctx: Context, config: Config) {
     super(ctx, 'remoteControl')
@@ -425,6 +427,7 @@ export class RemoteControlService extends TypertRemoteService {
 
     ctx.effect(() => () => {
       this.generation++
+      this.clearReconnectTimer()
       this.host?.close()
       this.host = undefined
     }, 'remote-control: host lifecycle')
@@ -495,8 +498,8 @@ export class RemoteControlService extends TypertRemoteService {
    */
   @Remote('openPairing')
   async openPairing(): Promise<RemoteControlPairingOffer> {
-    if (this.phase !== 'connected') await this.restart()
-    if (this.phase !== 'connected' || this.host === undefined) {
+    if (this.phase !== 'connected' || this.host?.isConnected() !== true) await this.restart()
+    if (this.phase !== 'connected' || this.host?.isConnected() !== true) {
       throw new Error(this.error ?? 'remote-control: relay is not connected')
     }
     const challenge = await this.host.openPairing({
@@ -552,6 +555,7 @@ export class RemoteControlService extends TypertRemoteService {
 
   private async restart(): Promise<void> {
     const generation = ++this.generation
+    this.clearReconnectTimer()
     this.host?.close()
     this.host = undefined
     this.error = undefined
@@ -567,6 +571,19 @@ export class RemoteControlService extends TypertRemoteService {
       harness: this.harness,
       log: this.ctx.logger,
       onPeerChanged: () => { this.persist() },
+      onConnectionChange: (connected: boolean) => {
+        if (generation !== this.generation || this.host !== host) return
+        if (connected) {
+          this.phase = 'connected'
+          this.error = undefined
+          this.reconnectDelayMs = 1_000
+          this.clearReconnectTimer()
+          return
+        }
+        if (!this.preferences.enabled) return
+        this.phase = 'disconnected'
+        this.scheduleReconnect(generation)
+      },
     })
     host.onPairingPendingUser = () => { /* state() reads pendingProposal directly */ }
     this.host = host
@@ -577,13 +594,34 @@ export class RemoteControlService extends TypertRemoteService {
         return
       }
       this.phase = 'connected'
+      this.error = undefined
+      this.reconnectDelayMs = 1_000
     } catch (error: unknown) {
       if (generation !== this.generation) return
       host.close()
       this.host = undefined
       this.phase = 'error'
       this.error = error instanceof Error ? error.message : String(error)
+      this.scheduleReconnect(generation)
     }
+  }
+
+  /** Keep the managed Relay connection alive without exposing connection plumbing to users. */
+  private scheduleReconnect(generation: number): void {
+    if (!this.preferences.enabled || generation !== this.generation || this.reconnectTimer !== undefined) return
+    const delay = this.reconnectDelayMs
+    this.reconnectDelayMs = Math.min(this.reconnectDelayMs * 2, 15_000)
+    this.reconnectTimer = setTimeout(() => {
+      this.reconnectTimer = undefined
+      if (generation !== this.generation || !this.preferences.enabled) return
+      void this.restart()
+    }, delay)
+  }
+
+  private clearReconnectTimer(): void {
+    if (this.reconnectTimer === undefined) return
+    clearTimeout(this.reconnectTimer)
+    this.reconnectTimer = undefined
   }
 
   private persist(): void {

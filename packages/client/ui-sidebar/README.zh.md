@@ -8,13 +8,13 @@
 
 New Session 会启动运行时的页面局部前端 Session Intent。运行时优先使用作用域操作明确指定的 Workspace，否则使用当前 Session 所属 Workspace，再否则使用最近活跃 Workspace；一个 Workspace 都没有时则清空选择，进入空白 New Session 页面。Workspace 专属控件与共享选择器由 ui-workspace 持有。
 
-`SidebarRootComponentProps` 组合布局 owner share、全局 `useSessions` 和 `useWorkspaces` 钩子、已声明的品牌、`sidebar.workspaces`、`sidebar.footer.action` 与 `sidebar.settings` 子 slot，以及注入的 `startSession` 与侧边栏切换回调。这里没有插件 store。
+`SidebarRootComponentProps` 组合布局 owner share、全局 `useSessions` 和 `useWorkspaces` 钩子、已声明的品牌、`sidebar.workspaces`、`sidebar.footer.action`、`sidebar.settings` 与 `sidebar.footer.trailing` 子 slot，以及注入的 `startSession` 与侧边栏切换回调。这里没有插件 store。
 
 实时收起时，外壳会把展开内容固定在当前宽度，并用 150ms 将其淡出。随后，上方四个控件——外壳的侧栏切换与新建会话，以及通过 `sidebar.workspaces` 渲染的添加和搜索——共用一次 150ms 的淡入和 49px 左移，在布局的 300ms 栏滑动结束时一起进入 56px 轨道；每个 36px 控件盒都会沿同一条路径到达轨道左侧 10px 的内边距。固定在底部的 `sidebar.settings` 控件只共用淡入时序，不发生横向位移。页面初始即为收起状态时会静态渲染轨道；减少动态效果模式会禁用两段过渡。
 
 栏内的滚动条是一种指针可供性：只要指针不在栏内，外壳就把 ui-theme 的[滚动条间接层](../ui-theme/README.md)重新绑定为 `transparent`；指针离开后滑块再保留 2 秒，因此没人指向的列表不会带着滚动条。避免行位移的空间预留属于滚动区域本身（[ui-workspace](../ui-workspace/README.md)），所以显示滑块不会引起重排。
 
-页脚会在展开和轨道布局中，把每个 `sidebar.footer.action` 注册项放入固定在底部的 `sidebar.settings` seat 上方的单列网格独立行。直接子项无法扩宽到栏外，因此注册项的 flex 方向、换行与 flex-basis 规则不会改变同级位置。每个注册项自行持有控件和可选的 portal 面板；外壳持有可叠加的列表几何，只共享栏状态（`wide`）。
+页脚会在展开和轨道布局中，把每个全宽 `sidebar.footer.action` 注册项放入底部页脚行上方的单列网格独立行。最终页脚行让 `sidebar.settings` 占据剩余宽度，并把紧凑的 `sidebar.footer.trailing` 图标操作放在右侧，因此 NEXA Remote 能与“设置”同排，而不会再增加一整行导航。直接子项无法扩宽到栏外。每个注册项自行持有控件和可选的 portal 面板；外壳持有可叠加几何，只共享栏状态（`wide`）。
 
 `/client` 导出表层只包含插件主体（`apply`／`inject`）及约定类型；SidebarRoot、行组件和树派生仍由 slot 注册封装在包内。
 

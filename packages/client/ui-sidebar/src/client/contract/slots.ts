@@ -4,8 +4,9 @@
  * owns column geometry (fold state machine, brand row, New Session);
  * everything between the section header and the list bottom is the
  * `sidebar.workspaces` registrant's (ui-workspace), and the foot is the
- * `sidebar.settings` registrant's (ui-settings), followed by optional footer
- * actions in `sidebar.footer.action`.
+ * `sidebar.settings` registrant's (ui-settings), with compact peer controls in
+ * `sidebar.footer.trailing`; optional full-width actions remain in
+ * `sidebar.footer.action` above that row.
  */
 import type { PropsLocale, PropsRenderSlots, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
 // Type-only: pulls ui-layout's SlotMap merge (the 'sidebar' entry) into every
@@ -39,9 +40,11 @@ declare module '@deepseek-ai/dsh-client-ui-slots' {
      * The sidebar passes only its column state — it holds no settings state.
      */
     'sidebar.settings': { kind: 'single'; scope: 'root'; owner: SidebarSettingsOwnerProps }
+    /** Compact icon actions rendered on the same footer row as Settings. */
+    'sidebar.footer.trailing': { kind: 'list'; scope: 'root'; owner: SidebarFooterActionOwnerProps }
     /**
-     * Optional actions beside Settings at the sidebar foot. Declared by this
-     * package's 'sidebar' entry; each action receives only the column state.
+     * Optional full-width actions above the Settings footer row. Declared by
+     * this package's 'sidebar' entry; each action receives only the column state.
      */
     'sidebar.footer.action': { kind: 'list'; scope: 'root'; owner: SidebarFooterActionOwnerProps }
   }
@@ -113,6 +116,7 @@ export type SidebarRootComponentProps =
     | 'sidebar.brand.name'
     | 'sidebar.workspaces'
     | 'sidebar.settings'
+    | 'sidebar.footer.trailing'
     | 'sidebar.footer.action'
   >
   & SidebarRootInjected & PropsLocale<'sidebar'>

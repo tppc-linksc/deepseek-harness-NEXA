@@ -16,7 +16,7 @@ export interface RemoteControlActionInjected {
 }
 
 export type RemoteControlActionProps =
-  PropsRuntime<'sidebar.footer.action'>
+  PropsRuntime<'sidebar.footer.trailing'>
   & PropsLocale<'remote-control'>
   & InjectFace<RemoteControlActionInjected>
 
@@ -36,7 +36,7 @@ function ConnectDeviceIcon({ size }: { size: number }) {
  * Host state; all pairing authorization and Session execution stay on the computer.
  */
 export function RemoteControlAction({
-  wide, useRemoteControl, load, setEnabled, openPairing, t,
+  useRemoteControl, load, setEnabled, openPairing, t,
 }: RemoteControlActionProps) {
   const view = useRemoteControl(value => value)
   const [open, setOpen] = useState(false)
@@ -106,7 +106,7 @@ export function RemoteControlAction({
   )
 
   return (
-    <div ref={rootRef} className={wide ? css.root : `${css.root} ${css.rail}`} onKeyDown={onKeyDown}>
+    <div ref={rootRef} className={css.root} onKeyDown={onKeyDown}>
       {open && anchor !== undefined && (
         <section className={css.panel} style={anchor} aria-label={t('title')} data-remote-control-panel>
           <header className={css.header}>
@@ -161,11 +161,11 @@ export function RemoteControlAction({
         className={css.trigger}
         data-active={open || undefined}
         aria-label={t('nav')}
+        title={t('nav')}
         aria-expanded={open}
         onClick={() => { setOpen(value => !value) }}
       >
-        <ConnectDeviceIcon size={wide ? 18 : 20} />
-        {wide && <span>{t('nav')}</span>}
+        <ConnectDeviceIcon size={20} />
       </button>
     </div>
   )

@@ -160,6 +160,9 @@ export class RemoteControlController {
   private publishState(state: RemoteControlState): void {
     this.store.update((view) => {
       view.state = state
+      // A successful state refresh proves the RPC path is healthy again. Do
+      // not leave a previous transient transport error pinned in the popover.
+      view.error = null
       // As soon as a phone proposal exists, the Relay has consumed the window
       // behind this QR. Keeping the image visible invites an invalid rescan.
       if (state.pendingDevice !== undefined) view.offer = null

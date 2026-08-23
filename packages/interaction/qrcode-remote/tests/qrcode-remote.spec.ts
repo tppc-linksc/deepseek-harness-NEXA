@@ -127,6 +127,11 @@ describe('DshRemoteHarnessAdapter', () => {
               projections: { asOfSeq: 8, values: { title: '同步移动端历史' } },
             },
             {
+              sessionId: 'session-new', cwd: '/work/NEXA-Remote', updatedAt: 101,
+              running: false, blank: true,
+              projections: { asOfSeq: 0, values: { title: '新会话' } },
+            },
+            {
               sessionId: 'subagent-1', cwd: '/work/NEXA-Remote', updatedAt: 90,
               running: false, blank: false, origin: 'subagent',
             },
@@ -140,7 +145,7 @@ describe('DshRemoteHarnessAdapter', () => {
         value: {
           items: [{
             workspaceId: 'workspace-1', path: '/work/NEXA-Remote', title: 'NEXA-Remote',
-            sessionIds: ['session-1'], createdAt: '2026-08-22T00:00:00Z', updatedAt: '2026-08-22T00:00:00Z',
+            sessionIds: ['session-1', 'session-new'], createdAt: '2026-08-22T00:00:00Z', updatedAt: '2026-08-22T00:00:00Z',
           }],
           archivedSessionIds: [],
         },
@@ -169,6 +174,9 @@ describe('DshRemoteHarnessAdapter', () => {
       sessions: [{
         sessionId: 'session-1', workspaceId: 'workspace-1', title: '同步移动端历史',
         cursor: 8, running: true, blank: false,
+      }, {
+        sessionId: 'session-new', workspaceId: 'workspace-1', title: '新会话',
+        cursor: 0, running: false, blank: true,
       }],
     })
     await expect(adapter.getSessionHistory('session-1', { beforeCursor: 8, maxMessages: 30 }))
