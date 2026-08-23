@@ -5512,8 +5512,8 @@ importers:
         specifier: link:../../../vendor/schemastery
         version: link:../../../vendor/schemastery
       nexa-remote:
-        specifier: git+ssh://git@github.com/tppc-linksc/NEXA-Remote.git#0ffeae94b57e33c6b2fd385f7e0383df23a61ae1
-        version: git+ssh://git@github.com/tppc-linksc/NEXA-Remote.git#0ffeae94b57e33c6b2fd385f7e0383df23a61ae1
+        specifier: git+ssh://git@github.com/tppc-linksc/NEXA-Remote.git#7e60c1d932b717d45971b05e90c8e3d67436db89
+        version: git+ssh://git@github.com/tppc-linksc/NEXA-Remote.git#7e60c1d932b717d45971b05e90c8e3d67436db89
       qrcode:
         specifier: ^1.5.4
         version: 1.5.4
@@ -14270,8 +14270,8 @@ packages:
     resolution: {integrity: sha512-8Ofs/AUQh8MaEcrlq5xOX0CQ9ypTF5dl78mjlMNfOK08fzpgTHQRQPBxcPlEtIw0yRpws+Zo/3r+5WRby7u3Gg==}
     engines: {node: '>= 0.6'}
 
-  nexa-remote@git+ssh://git@github.com/tppc-linksc/NEXA-Remote.git#0ffeae94b57e33c6b2fd385f7e0383df23a61ae1:
-    resolution: {commit: 0ffeae94b57e33c6b2fd385f7e0383df23a61ae1, repo: git@github.com:tppc-linksc/NEXA-Remote.git, type: git}
+  nexa-remote@git+ssh://git@github.com/tppc-linksc/NEXA-Remote.git#7e60c1d932b717d45971b05e90c8e3d67436db89:
+    resolution: {commit: 7e60c1d932b717d45971b05e90c8e3d67436db89, repo: git@github.com:tppc-linksc/NEXA-Remote.git, type: git}
     version: 0.1.0
 
   node-abi@4.33.0:
@@ -20714,7 +20714,7 @@ snapshots:
 
   negotiator@1.0.0: {}
 
-  nexa-remote@git+ssh://git@github.com/tppc-linksc/NEXA-Remote.git#0ffeae94b57e33c6b2fd385f7e0383df23a61ae1:
+  nexa-remote@git+ssh://git@github.com/tppc-linksc/NEXA-Remote.git#7e60c1d932b717d45971b05e90c8e3d67436db89:
     dependencies:
       ws: 8.21.0
     transitivePeerDependencies:
