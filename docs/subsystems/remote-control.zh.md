@@ -2,7 +2,7 @@
 
 [English](remote-control.md) | 中文
 
-[dsh-qrcode-remote](../../packages/interaction/qrcode-remote) 提供可选启用的 NEXA Remote 桥，让已配对的微信小程序查看会话、追加指令、停止正在执行的任务，或回答待处理审批，而无需创建第二套 agent 运行时。电脑是唯一执行权威：所有会话、Agent 循环、模型调用、项目与工具操作都由电脑持有。小程序只是经过移动端适配的状态投影与远程输入界面，永远不会在本地创建或执行任务。
+[dsh-qrcode-remote](../../packages/interaction/qrcode-remote) 提供可选启用的 NEXA Remote 桥，把已配对的微信小程序变成一台电脑的应用级控制端。它可以查看会话、追加或停止任务、回答待处理审批、在电脑新建会话、把电脑项目目录注册为工作区，以及修改明确允许远程修改的设置，而无需创建第二套 agent 运行时。电脑仍是唯一执行权威：所有会话、Agent 循环、模型调用、项目、设置与工具操作都由电脑持有；小程序不会在本地执行，也不会成为第二事实源。
 
 源码：[`packages/interaction/qrcode-remote/src/index.ts`](../../packages/interaction/qrcode-remote/src/index.ts)
 
@@ -14,11 +14,17 @@
 
 Host 通过原子替换把电脑身份、加密通道对端密钥、偏好与撤销标记写入所配置的 `statePath`，随后强制文件权限为 `0600`。`RemoteControlState` 与 `RemoteControlPairingOffer` 是浏览器安全投影：两者都不会返回身份私钥或对端通道密钥。因此侧边栏浮层只是窄连接界面，不是密码学身份所有者或设备管理控制台。
 
-## 指令与事件边界
+## 应用控制边界
 
-手机不会直接调用 Agent 实现。`DshRemoteHarnessAdapter` 把 `append_instruction` 映射到采用队列准入的 `ctx.apiProxy.sessions.prompt`，把 `stop` 映射到 Session 取消 API；它拒绝其他所有动作，等待目标 Agent 进入空闲状态，再返回最终接受或拒绝结果。会话事件与有界快照通过加密的 NEXA 通道返回，因此 Host 仍是会话事实的唯一来源。快照包含每个未归档的桌面会话，包括刚创建的空白会话；只有已归档会话和 subagent 会话不进入移动端主列表。
+手机不会直接调用 Agent 实现。`DshRemoteHarnessAdapter` 把 `session.append_instruction` 映射到 `ctx.apiProxy.sessions.prompt`，把 `session.stop` 映射到 Session 取消 API，把 `session.create` 映射到 `ctx.apiProxy.sessions.create`。每次修改都使用带幂等键的版本化控制请求；Host 会为重试回放已完成结果，并发布电脑产生的新快照，不允许手机预判成功。会话事件与有界快照通过加密的 NEXA 通道返回，因此 Host 仍是会话事实的唯一来源。快照包含每个未归档的桌面会话，包括刚创建的空白会话；只有已归档会话和 subagent 会话不进入移动端主列表。
 
 该投影沿用桌面信息层级，而不暴露协议噪音。移动侧栏只显示当前电脑名称、在线状态以及工作区/会话树；不重复头像、产品说明或“远程镜像/连接电脑”模式，也不提供占位关闭按钮，点击遮罩或向左滑动即可收起。用户与 Agent 消息直接渲染；工具事件提供紧凑动作以及具体命令、文件或测试目标，参数、过程与结果在用户打开卡片前保持折叠，Markdown 结果使用安全渲染子集。电脑的 `running` 字段驱动手机输入栏在发送与停止之间切换；手机停止请求只有在电脑返回 Session 取消结果后才成为权威状态。历史页按编码后的字节预算控制在 Relay 帧上限以内，大型工具输出带明确截断标记并用 `hasMore` 继续分页。已认证的快照、历史页或实时帧也会覆盖延迟的离线 Presence，避免正常同步的会话被误标为正在重连。
+
+## 工作区与设置控制
+
+只有适配器真实实现后，Host 才会发布 `workspace.roots.list`、`workspace.directory.list`、`workspace.register` 和 `workspace.create`。目录结果只包含显示名和短时不透明引用，不包含绝对路径。每次请求都会重新解析引用，证明规范目录仍位于同一设备的授权根下，并拒绝符号链接、挂载逃逸、隐藏或敏感目录、路径穿越、嵌套创建和非法名称。P0 明确不提供移动、重命名、删除、上传或任意文件读写；创建失败时，仅在新目录仍为空的情况下回滚。
+
+Host 通过 `settings.get` 与 `settings.update` 发布设置类型、风险、当前值和是否允许远程修改的描述符。P0 允许修改电脑名称，而 Relay 配置、凭据、授权根、安全开关和模型配置仍仅限电脑本地修改。更新请求包含期望的 `settings_revision` 和提交设置的摘要；电脑拒绝过期、未知、摘要不匹配或不允许的写入，并先持久化新修订号，再由手机刷新投影。
 
 ## 审批回退
 
@@ -82,5 +88,5 @@ Host-owned remote connection, pairing state, and typed settings actions.
 @Remote('revoke') revoke(request: RemoteControlRevokeRequest): RemoteControlState
 ```
 
-Source: [`packages/interaction/qrcode-remote/src/index.ts:383`](../../packages/interaction/qrcode-remote/src/index.ts)
+Source: [`packages/interaction/qrcode-remote/src/index.ts:667`](../../packages/interaction/qrcode-remote/src/index.ts)
 <!-- END GENERATED cordis-surface -->

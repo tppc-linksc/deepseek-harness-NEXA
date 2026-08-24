@@ -2,11 +2,12 @@
 
 import { randomUUID } from 'node:crypto'
 import { chmodSync, existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
-import { dirname } from 'node:path'
+import { lstat, mkdir, readdir, realpath, rmdir, stat } from 'node:fs/promises'
+import { basename, dirname, isAbsolute, join, parse, resolve, sep } from 'node:path'
 import { createRequire } from 'node:module'
 import { Context, Service } from '@deepseek-ai/cordis'
 import s from '@deepseek-ai/schemastery'
-import { RpcId } from '@deepseek-ai/dsh-host-apiproxy'
+import { RpcId, type WorkspaceId } from '@deepseek-ai/dsh-host-apiproxy'
 import type { SessionEvent, SessionId } from '@deepseek-ai/dsh-session'
 import type { ApprovalOutcome, ApprovalRequest } from '@deepseek-ai/dsh-user-approval'
 import { Remote, TypertRemoteService } from '@deepseek-ai/dsh-typert-protocol'
@@ -48,6 +49,8 @@ export interface Config {
   computerName?: string
   /** Private JSON file containing the computer identity, peers, and saved preferences. */
   statePath: string
+  /** Extra project roots explicitly authorized by the local desktop configuration. */
+  workspaceRoots?: string[]
 }
 
 interface EncodedPeer {
@@ -69,6 +72,7 @@ interface StoredState {
     deviceId: string
   }
   preferences: RemoteControlPreferences
+  settingsRevision?: number
   peers: Record<string, EncodedPeer>
 }
 
@@ -155,8 +159,11 @@ function loadState(path: string, defaults: RemoteControlPreferences): {
   identity: NexaIdentity
   peers: Map<string, NexaPeer>
   preferences: RemoteControlPreferences
+  settingsRevision: number
 } {
-  if (!existsSync(path)) return { identity: createIdentity(), peers: new Map(), preferences: defaults }
+  if (!existsSync(path)) {
+    return { identity: createIdentity(), peers: new Map(), preferences: defaults, settingsRevision: 1 }
+  }
   const candidate = JSON.parse(readFileSync(path, 'utf8')) as {
     version?: unknown
     identity?: unknown
@@ -175,6 +182,8 @@ function loadState(path: string, defaults: RemoteControlPreferences): {
     identity: decodeIdentity(value.identity),
     peers: new Map(Object.entries(value.peers).map(([deviceId, peer]) => [deviceId, decodePeer(peer)])),
     preferences: normalizePreferences(value.preferences),
+    settingsRevision: typeof value.settingsRevision === 'number' && Number.isSafeInteger(value.settingsRevision)
+      && value.settingsRevision > 0 ? value.settingsRevision : 1,
   }
 }
 
@@ -183,6 +192,7 @@ function writeState(
   identity: NexaIdentity,
   peers: Map<string, NexaPeer>,
   preferences: RemoteControlPreferences,
+  settingsRevision: number,
 ): void {
   mkdirSync(dirname(path), { recursive: true })
   const temporary = `${path}.${randomUUID()}.tmp`
@@ -191,6 +201,7 @@ function writeState(
     version: 1,
     identity: encodeIdentity(identity),
     preferences,
+    settingsRevision,
     peers: encodedPeers,
   } satisfies StoredState, null, 2)}\n`, { mode: 0o600 })
   chmodSync(temporary, 0o600)
@@ -212,8 +223,29 @@ function isAborted(signal: AbortSignal | undefined): boolean {
 /** Adapter that injects phone instructions through the same ApiProxy admission path as the local UI. */
 export class DshRemoteHarnessAdapter implements NexaHarnessAdapter {
   private eventCallback: Parameters<NexaHarnessAdapter['subscribeEvents']>[0] | undefined
+  private readonly directoryRefs = new Map<string, { path: string; expiresAt: number }>()
+  private readonly pathRefs = new Map<string, string>()
+  private readonly configuredWorkspaceRoots: readonly string[]
+  private readonly settingsProvider: {
+    get: () => unknown
+    update: (key: string, value: unknown, options: {
+      expectedRevision?: number
+      oldValueDigest?: string
+    }) => unknown
+  } | undefined
 
-  constructor(private readonly ctx: Context) {
+  constructor(private readonly ctx: Context, options: {
+    workspaceRoots?: readonly string[]
+    settings?: {
+      get: () => unknown
+      update: (key: string, value: unknown, options: {
+        expectedRevision?: number
+        oldValueDigest?: string
+      }) => unknown
+    }
+  } = {}) {
+    this.configuredWorkspaceRoots = options.workspaceRoots ?? []
+    this.settingsProvider = options.settings
     ctx.on('session/event', (session, event) => {
       this.eventCallback?.({
         sessionId: session.id,
@@ -231,6 +263,21 @@ export class DshRemoteHarnessAdapter implements NexaHarnessAdapter {
 
   setApprovalRequester(_callback: (request: unknown) => Promise<number>): void {
     // Real DSH approvals enter through the approval/request waterfall below.
+  }
+
+  /** Capabilities implemented by this exact desktop build and admitted through ApiProxy. */
+  getCapabilities(): string[] {
+    const capabilities = [
+      'session.create',
+      'session.append_instruction',
+      'session.stop',
+      'workspace.roots.list',
+      'workspace.directory.list',
+      'workspace.register',
+      'workspace.create',
+    ]
+    if (this.settingsProvider !== undefined) capabilities.push('settings.read', 'settings.write')
+    return capabilities
   }
 
   async getSessionSnapshot(): Promise<unknown> {
@@ -280,7 +327,252 @@ export class DshRemoteHarnessAdapter implements NexaHarnessAdapter {
         archived: false,
       })),
       sessions,
+      capabilities: this.getCapabilities(),
+      settingsRevision: this.settingsProvider === undefined
+        ? 0
+        : Number((await this.settingsProvider.get() as { revision?: unknown }).revision ?? 0),
       generatedAt: Date.now(),
+    }
+  }
+
+  getSettings(): Promise<unknown> {
+    const provider = this.settingsProvider
+    if (provider === undefined) {
+      return Promise.reject(Object.assign(
+        new Error('当前电脑端版本暂不支持远程设置'),
+        { code: 'CAPABILITY_UNAVAILABLE' },
+      ))
+    }
+    return Promise.resolve().then(() => provider.get())
+  }
+
+  updateSetting(key: string, value: unknown, options: {
+    expectedRevision?: number
+    oldValueDigest?: string
+  }): Promise<unknown> {
+    const provider = this.settingsProvider
+    if (provider === undefined) {
+      return Promise.reject(Object.assign(
+        new Error('当前电脑端版本暂不支持远程设置'),
+        { code: 'CAPABILITY_UNAVAILABLE' },
+      ))
+    }
+    return Promise.resolve().then(() => provider.update(key, value, options))
+  }
+
+  /**
+   * Create an authoritative DSH Session inside an existing desktop Workspace.
+   *
+   * @param rawWorkspaceId - Desktop-owned Workspace identifier selected by the phone.
+   */
+  async createSession(
+    rawWorkspaceId: string,
+    _options: { title?: string; initialPrompt?: string } = {},
+    meta: { commandId?: string } = {},
+  ): Promise<{ sessionId: string; workspaceId: string; title: string; running: boolean }> {
+    if (rawWorkspaceId.trim() === '') throw new Error('workspace not found')
+    const response = await this.ctx.apiProxy.sessions.create({
+      rpcId: RpcId(`remote-create-session-${meta.commandId ?? randomUUID()}`),
+      payload: { workspaceId: rawWorkspaceId as WorkspaceId },
+    })
+    if (!response.result.ok) throw new Error(response.result.error.message)
+    return {
+      sessionId: response.result.value.sessionId,
+      workspaceId: rawWorkspaceId,
+      title: '新会话',
+      running: false,
+    }
+  }
+
+  private directoryRef(path: string): string {
+    const now = Date.now()
+    const existing = this.pathRefs.get(path)
+    if (existing !== undefined) {
+      const record = this.directoryRefs.get(existing)
+      if (record !== undefined && record.expiresAt > now) return existing
+      this.directoryRefs.delete(existing)
+      this.pathRefs.delete(path)
+    }
+    const ref = `dir_${randomUUID().replaceAll('-', '')}`
+    this.directoryRefs.set(ref, { path, expiresAt: now + 5 * 60_000 })
+    this.pathRefs.set(path, ref)
+    return ref
+  }
+
+  private async authorizedRoots(): Promise<Array<{ path: string; name: string; device: bigint | number }>> {
+    const response = await this.ctx.apiProxy.workspace.list({
+      rpcId: RpcId(`remote-workspace-roots-${randomUUID()}`),
+      payload: {},
+    })
+    if (!response.result.ok) throw new Error(response.result.error.message)
+    const candidates = [
+      ...this.configuredWorkspaceRoots,
+      ...response.result.value.items.map(workspace => dirname(workspace.path)),
+    ]
+    const roots: Array<{ path: string; name: string; device: bigint | number }> = []
+    const seen = new Set<string>()
+    for (const candidate of candidates) {
+      try {
+        if (!isAbsolute(candidate)) continue
+        const direct = await lstat(candidate)
+        if (!direct.isDirectory() || direct.isSymbolicLink()) continue
+        const canonical = await realpath(candidate)
+        if (canonical === parse(canonical).root || seen.has(canonical)) continue
+        const details = await stat(canonical)
+        seen.add(canonical)
+        roots.push({ path: canonical, name: basename(canonical) || '项目', device: details.dev })
+      } catch { /* 已删除或无权访问的本地根目录不授权给手机。 */ }
+    }
+    return roots
+  }
+
+  private async resolveDirectoryRef(ref: string): Promise<{
+    path: string
+    root: { path: string; name: string; device: bigint | number }
+  }> {
+    const record = this.directoryRefs.get(ref)
+    if (record === undefined || record.expiresAt <= Date.now()) {
+      if (record !== undefined) {
+        this.directoryRefs.delete(ref)
+        this.pathRefs.delete(record.path)
+      }
+      throw Object.assign(new Error('目录引用已过期，请重新打开工作区选择器'), { code: 'EXPIRED' })
+    }
+    const direct = await lstat(record.path)
+    if (!direct.isDirectory() || direct.isSymbolicLink()) {
+      throw Object.assign(new Error('所选目录不再可用'), { code: 'NOT_FOUND' })
+    }
+    const canonical = await realpath(record.path)
+    if (canonical !== record.path) {
+      throw Object.assign(new Error('目录边界已变化，请重新选择'), { code: 'OUTSIDE_ALLOWED_ROOT' })
+    }
+    const roots = await this.authorizedRoots()
+    const root = roots.find(candidate => canonical === candidate.path || canonical.startsWith(`${candidate.path}${sep}`))
+    if (root === undefined) {
+      throw Object.assign(new Error('目录不在电脑授权的项目范围内'), { code: 'OUTSIDE_ALLOWED_ROOT' })
+    }
+    const details = await stat(canonical)
+    if (details.dev !== root.device) {
+      throw Object.assign(new Error('不允许跨越电脑授权的文件系统边界'), { code: 'OUTSIDE_ALLOWED_ROOT' })
+    }
+    record.expiresAt = Date.now() + 5 * 60_000
+    return { path: canonical, root }
+  }
+
+  async listWorkspaceRoots(): Promise<{
+    roots: Array<{ rootId: string; name: string; directoryRef: string }>
+  }> {
+    const roots = await this.authorizedRoots()
+    return {
+      roots: roots.map(root => ({
+        rootId: `root_${Crypto.base32Encode(Crypto.sha256(Crypto.utf8Bytes(root.path))).slice(0, 12).toLowerCase()}`,
+        name: root.name,
+        directoryRef: this.directoryRef(root.path),
+      })),
+    }
+  }
+
+  /**
+   * List child project directories behind a short-lived opaque desktop reference.
+   *
+   * @param rawDirectoryRef - Opaque directory reference previously issued by this desktop.
+   */
+  async listDirectory(rawDirectoryRef: string): Promise<{
+    directory: { directoryRef: string; name: string; canSelect: boolean; parentDirectoryRef: string }
+    entries: Array<{ directoryRef: string; name: string; kind: 'directory'; canSelect: boolean }>
+    nextCursor: null
+  }> {
+    const current = await this.resolveDirectoryRef(rawDirectoryRef)
+    const rows = await readdir(current.path, { withFileTypes: true })
+    const entries: Array<{ directoryRef: string; name: string; kind: 'directory'; canSelect: boolean }> = []
+    const blocked = /^(?:\.git|\.ssh|\.gnupg|\.aws|\.azure|\.config|\.env.*|Library|node_modules)$/i
+    for (const row of rows) {
+      if (!row.isDirectory() || row.isSymbolicLink() || blocked.test(row.name) || row.name.startsWith('.')) continue
+      const path = join(current.path, row.name)
+      try {
+        const details = await lstat(path)
+        if (!details.isDirectory() || details.isSymbolicLink() || details.dev !== current.root.device) continue
+        const canonical = await realpath(path)
+        if (canonical !== path || !canonical.startsWith(`${current.root.path}${sep}`)) continue
+        entries.push({ directoryRef: this.directoryRef(canonical), name: row.name, kind: 'directory', canSelect: true })
+      } catch { /* 竞态中消失或无权访问的子目录直接省略。 */ }
+      if (entries.length >= 200) break
+    }
+    entries.sort((left, right) => left.name.localeCompare(right.name, 'zh-CN'))
+    const parentPath = dirname(current.path)
+    return {
+      directory: {
+        directoryRef: rawDirectoryRef,
+        name: basename(current.path) || current.root.name,
+        canSelect: true,
+        parentDirectoryRef: current.path === current.root.path ? '' : this.directoryRef(parentPath),
+      },
+      entries,
+      nextCursor: null,
+    }
+  }
+
+  private workspaceResult(value: {
+    workspace: { workspaceId: WorkspaceId; title: string }
+    created: boolean
+  }): { workspace: { workspaceId: string; name: string }; created: boolean } {
+    return {
+      workspace: { workspaceId: value.workspace.workspaceId, name: value.workspace.title },
+      created: value.created,
+    }
+  }
+
+  /**
+   * Register an existing desktop directory as a DSH Workspace.
+   *
+   * @param rawDirectoryRef - Opaque directory reference selected by the phone.
+   */
+  async registerWorkspace(rawDirectoryRef: string, meta: { commandId?: string } = {}): Promise<{
+    workspace: { workspaceId: string; name: string }
+    created: boolean
+  }> {
+    const directory = await this.resolveDirectoryRef(rawDirectoryRef)
+    const response = await this.ctx.apiProxy.workspace.create({
+      rpcId: RpcId(`remote-register-workspace-${meta.commandId ?? randomUUID()}`),
+      payload: { path: directory.path },
+    })
+    if (!response.result.ok) throw new Error(response.result.error.message)
+    return this.workspaceResult(response.result.value)
+  }
+
+  /**
+   * Create and register a desktop project directory under an authorized parent.
+   *
+   * @param rawParentRef - Opaque reference for the authorized desktop parent directory.
+   * @param rawName - Single new directory name supplied by the phone.
+   */
+  async createWorkspace(rawParentRef: string, rawName: string, meta: { commandId?: string } = {}): Promise<{
+    workspace: { workspaceId: string; name: string }
+    created: boolean
+  }> {
+    const parent = await this.resolveDirectoryRef(rawParentRef)
+    const name = rawName.normalize('NFC').trim()
+    if (name === '' || name === '.' || name === '..' || /[/\\\0]/.test(name) || name.startsWith('.')) {
+      throw Object.assign(new Error('文件夹名称必须是不以点开头的单一合法名称'), { code: 'NAME_INVALID' })
+    }
+    const target = resolve(parent.path, name)
+    if (target !== join(parent.path, name) || !target.startsWith(`${parent.root.path}${sep}`)) {
+      throw Object.assign(new Error('目标目录超出电脑授权范围'), { code: 'OUTSIDE_ALLOWED_ROOT' })
+    }
+    try {
+      await mkdir(target, { mode: 0o755 })
+    } catch (error: unknown) {
+      const code = typeof error === 'object' && error !== null && 'code' in error ? String(error.code) : ''
+      if (code === 'EEXIST') throw Object.assign(new Error('同名文件夹已存在'), { code: 'DIRECTORY_EXISTS' })
+      throw error
+    }
+    try {
+      const directoryRef = this.directoryRef(target)
+      await this.resolveDirectoryRef(directoryRef)
+      return await this.registerWorkspace(directoryRef, meta)
+    } catch (error) {
+      try { await rmdir(target) } catch { /* 只回滚仍为空的本次新建目录。 */ }
+      throw error
     }
   }
 
@@ -389,6 +681,7 @@ export class RemoteControlService extends TypertRemoteService {
     allowCustomRelay: s.boolean().default(false),
     computerName: s.string().default('DeepSeek Harness NEXA'),
     statePath: s.string().required(),
+    workspaceRoots: s.array(s.string()).default([]),
   })
 
   private readonly statePath: string
@@ -398,6 +691,7 @@ export class RemoteControlService extends TypertRemoteService {
   private readonly managedRelayUrl: string
   private readonly allowCustomRelay: boolean
   private preferences: RemoteControlPreferences
+  private settingsRevision: number
   private host: RemoteHostType | undefined
   private phase: RemoteControlPhase = 'disconnected'
   private error: string | undefined
@@ -422,7 +716,14 @@ export class RemoteControlService extends TypertRemoteService {
       ...loaded.preferences,
       relayUrl: this.allowCustomRelay ? loaded.preferences.relayUrl : this.managedRelayUrl,
     })
-    this.harness = new DshRemoteHarnessAdapter(ctx)
+    this.settingsRevision = loaded.settingsRevision
+    this.harness = new DshRemoteHarnessAdapter(ctx, {
+      ...(config.workspaceRoots === undefined ? {} : { workspaceRoots: config.workspaceRoots }),
+      settings: {
+        get: () => this.settingsSnapshot(),
+        update: (key, value, options) => this.updateRemoteSetting(key, value, options),
+      },
+    })
     this.persist()
 
     ctx.effect(() => () => {
@@ -473,10 +774,14 @@ export class RemoteControlService extends TypertRemoteService {
    */
   @Remote('configure')
   async configure(request: RemoteControlConfigureRequest): Promise<RemoteControlState> {
-    this.preferences = normalizePreferences({
+    const next = normalizePreferences({
       ...request,
       relayUrl: this.allowCustomRelay ? request.relayUrl : this.managedRelayUrl,
     })
+    if (next.enabled !== this.preferences.enabled
+      || next.relayUrl !== this.preferences.relayUrl
+      || next.computerName !== this.preferences.computerName) this.settingsRevision += 1
+    this.preferences = next
     this.persist()
     await this.restart()
     return this.state()
@@ -624,8 +929,89 @@ export class RemoteControlService extends TypertRemoteService {
     this.reconnectTimer = undefined
   }
 
+  private settingsSnapshot(): {
+    revision: number
+    sections: Array<{
+      id: string
+      title: string
+      items: Array<{
+        key: string
+        title: string
+        description: string
+        type: 'text' | 'boolean'
+        value: string | boolean
+        risk: 'remote-editable' | 'local-only'
+        revision: number
+      }>
+    }>
+  } {
+    const revision = this.settingsRevision
+    return {
+      revision,
+      sections: [
+        {
+          id: 'computer',
+          title: '这台电脑',
+          items: [{
+            key: 'remote.computerName',
+            title: '电脑名称',
+            description: '用于在微信小程序中识别这台电脑。',
+            type: 'text',
+            value: this.preferences.computerName,
+            risk: 'remote-editable',
+            revision,
+          }],
+        },
+        {
+          id: 'security',
+          title: '连接与安全',
+          items: [{
+            key: 'remote.enabled',
+            title: '允许移动端连接',
+            description: '为保护电脑安全，此项只能在电脑端修改。',
+            type: 'boolean',
+            value: this.preferences.enabled,
+            risk: 'local-only',
+            revision,
+          }],
+        },
+      ],
+    }
+  }
+
+  private updateRemoteSetting(key: string, value: unknown, options: {
+    expectedRevision?: number
+    oldValueDigest?: string
+  }): ReturnType<RemoteControlService['settingsSnapshot']> {
+    if (options.expectedRevision !== this.settingsRevision) {
+      throw Object.assign(new Error('设置已在电脑端更新，请刷新后重试'), { code: 'REVISION_CONFLICT' })
+    }
+    if (key !== 'remote.computerName') {
+      throw Object.assign(new Error('该设置只能在电脑端修改'), { code: 'LOCAL_ONLY' })
+    }
+    const oldValueDigest = Crypto.base64urlEncode(Crypto.sha256(
+      Crypto.utf8Bytes(JSON.stringify(this.preferences.computerName)),
+    ))
+    if (options.oldValueDigest === undefined || options.oldValueDigest !== oldValueDigest) {
+      throw Object.assign(new Error('设置原值已变化，请刷新后重试'), { code: 'VALUE_CONFLICT' })
+    }
+    if (typeof value !== 'string') {
+      throw Object.assign(new Error('电脑名称格式无效'), { code: 'INVALID_REQUEST' })
+    }
+    const computerName = value.trim()
+    if (computerName.length === 0 || computerName.length > 80) {
+      throw Object.assign(new Error('电脑名称应为 1 至 80 个字符'), { code: 'INVALID_REQUEST' })
+    }
+    if (computerName !== this.preferences.computerName) {
+      this.preferences = normalizePreferences({ ...this.preferences, computerName })
+      this.settingsRevision += 1
+      this.persist()
+    }
+    return this.settingsSnapshot()
+  }
+
   private persist(): void {
-    writeState(this.statePath, this.identity, this.peers, this.preferences)
+    writeState(this.statePath, this.identity, this.peers, this.preferences, this.settingsRevision)
   }
 
   private async answerApproval(

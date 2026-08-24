@@ -4,6 +4,8 @@ Status: implemented
 
 English | [中文](2026-08-22-nexa-remote-thin-client.zh.md)
 
+> The seamless scan and computer-authority decisions remain current. The later [application-control decision](2026-08-24-nexa-remote-application-control.md) supersedes the narrower restriction that mobile may only mirror existing workspaces and Sessions.
+
 ## Problem
 
 The first NEXA Remote surface exposed implementation details as product steps. Users had to open Settings, inspect Relay state and identifiers, scan, compare a fingerprint, confirm again on the computer, acknowledge pairing success, and then enter a session. Reloading the Mini Program could lose that transition state. This made a secure remote extension feel like a separate system and obscured the core fact that the computer, not the phone, owns and executes every task.

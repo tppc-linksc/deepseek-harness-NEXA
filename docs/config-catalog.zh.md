@@ -1551,10 +1551,12 @@ export interface Config {
   computerName?: string
   /** Private JSON file containing the computer identity, peers, and saved preferences. */
   statePath: string
+  /** Extra project roots explicitly authorized by the local desktop configuration. */
+  workspaceRoots?: string[]
 }
 ```
 
-来源：[`packages/interaction/qrcode-remote/src/index.ts:40`](../packages/interaction/qrcode-remote/src/index.ts)
+来源：[`packages/interaction/qrcode-remote/src/index.ts:41`](../packages/interaction/qrcode-remote/src/index.ts)
 
 <a id="deepseek-aidsh-repeat-tool-reminder"></a>
 

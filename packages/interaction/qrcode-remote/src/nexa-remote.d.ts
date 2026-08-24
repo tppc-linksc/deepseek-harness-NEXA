@@ -73,6 +73,35 @@ declare module 'nexa-remote/host' {
 
   export interface NexaHarnessAdapter {
     getSessionSnapshot(): Promise<unknown>
+    getCapabilities?(): string[]
+    createSession?(
+      workspaceId: string,
+      options?: { title?: string; initialPrompt?: string },
+      meta?: { commandId?: string; deviceId?: string },
+    ): Promise<{ sessionId: string; workspaceId: string; title: string; running?: boolean }>
+    listWorkspaceRoots?(meta?: { commandId?: string; deviceId?: string }): Promise<{
+      roots: Array<{ rootId: string; name: string; directoryRef: string }>
+    }>
+    listDirectory?(directoryRef: string, meta?: { commandId?: string; deviceId?: string }): Promise<{
+      directory: { directoryRef: string; name: string; canSelect: boolean; parentDirectoryRef?: string }
+      entries: Array<{ directoryRef: string; name: string; kind: 'directory'; canSelect: boolean }>
+      nextCursor: string | null
+    }>
+    registerWorkspace?(directoryRef: string, meta?: { commandId?: string; deviceId?: string }): Promise<{
+      workspace: { workspaceId: string; name: string }
+      created: boolean
+    }>
+    createWorkspace?(parentDirectoryRef: string, name: string, meta?: { commandId?: string; deviceId?: string }): Promise<{
+      workspace: { workspaceId: string; name: string }
+      created: boolean
+    }>
+    getSettings?(meta?: { commandId?: string; deviceId?: string }): Promise<unknown>
+    updateSetting?(key: string, value: unknown, options: {
+      expectedRevision?: number
+      oldValueDigest?: string
+      commandId?: string
+      deviceId?: string
+    }): Promise<unknown>
     getSessionHistory(
       sessionId: string,
       options?: { beforeCursor?: number; maxMessages?: number },

@@ -1,4 +1,5 @@
-import { mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, statSync, symlinkSync, writeFileSync } from 'node:fs'
+import { createHash } from 'node:crypto'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { Context } from '@deepseek-ai/cordis'
@@ -80,6 +81,49 @@ describe('RemoteControlService', () => {
         computerName: 'My computer',
       },
     })
+  })
+
+  it('exposes an allowlisted remote settings schema with revision conflict protection', async () => {
+    const { ctx, path } = disabledHarness()
+    await ctx.plugin(RemoteControlService, {
+      enabled: false,
+      relayUrl: 'wss://relay.tppc.top',
+      computerName: 'Original computer',
+      statePath: path,
+    }).await()
+    const service = ctx.get('remoteControl') as RemoteControlService
+    const adapter = (service as unknown as { harness: DshRemoteHarnessAdapter }).harness
+    const settings = await adapter.getSettings() as {
+      revision: number
+      sections: Array<{ items: Array<{ key: string; value: unknown; risk: string }> }>
+    }
+    const items = settings.sections.flatMap(section => section.items)
+    const name = items.find(item => item.key === 'remote.computerName')!
+    const enabled = items.find(item => item.key === 'remote.enabled')!
+    expect(name.risk).toBe('remote-editable')
+    expect(enabled.risk).toBe('local-only')
+    expect(adapter.getCapabilities()).toContain('settings.write')
+
+    const oldValueDigest = createHash('sha256')
+      .update(JSON.stringify(name.value))
+      .digest('base64url')
+    const updated = await adapter.updateSetting('remote.computerName', 'Remote computer', {
+      expectedRevision: settings.revision,
+      oldValueDigest,
+    }) as { revision: number }
+    expect(updated.revision).toBe(settings.revision + 1)
+    expect(service.state().preferences.computerName).toBe('Remote computer')
+    await expect(adapter.updateSetting('remote.computerName', 'Stale overwrite', {
+      expectedRevision: settings.revision,
+      oldValueDigest,
+    })).rejects.toMatchObject({ code: 'REVISION_CONFLICT' })
+    await expect(adapter.updateSetting('remote.enabled', true, {
+      expectedRevision: updated.revision,
+      oldValueDigest: createHash('sha256').update('false').digest('base64url'),
+    })).rejects.toMatchObject({ code: 'LOCAL_ONLY' })
+
+    const stored = JSON.parse(readFileSync(path, 'utf8')) as { settingsRevision?: number }
+    expect(stored.settingsRevision).toBe(updated.revision)
   })
 
   it('keeps the managed Relay fixed even when a browser submits another URL', async () => {
@@ -170,6 +214,15 @@ describe('DshRemoteHarnessAdapter', () => {
     const adapter = new DshRemoteHarnessAdapter(ctx)
 
     await expect(adapter.getSessionSnapshot()).resolves.toMatchObject({
+      capabilities: [
+        'session.create',
+        'session.append_instruction',
+        'session.stop',
+        'workspace.roots.list',
+        'workspace.directory.list',
+        'workspace.register',
+        'workspace.create',
+      ],
       workspaces: [{ workspaceId: 'workspace-1', name: 'NEXA-Remote' }],
       sessions: [{
         sessionId: 'session-1', workspaceId: 'workspace-1', title: '同步移动端历史',
@@ -196,6 +249,99 @@ describe('DshRemoteHarnessAdapter', () => {
       sessionId: 'session-1', history: true, hasMore: true,
       events: [{ sessionId: 'session-1', cursor: 7 }],
     })
+  })
+
+  it('creates a real Session through ApiProxy inside the selected Workspace', async () => {
+    const ctx = new Context()
+    contexts.push(ctx)
+    const create = vi.fn().mockResolvedValue({
+      result: { ok: true, value: { sessionId: 'session-mobile-1' } },
+    })
+    ctx.provide('agents', { get: () => undefined } as never)
+    ctx.provide('apiProxy', { sessions: { create } } as never)
+    const adapter = new DshRemoteHarnessAdapter(ctx)
+
+    await expect(adapter.createSession('workspace-1', {}, { commandId: 'create-1' }))
+      .resolves.toEqual({
+        sessionId: 'session-mobile-1',
+        workspaceId: 'workspace-1',
+        title: '新会话',
+        running: false,
+      })
+    expect(create).toHaveBeenCalledWith({
+      rpcId: 'remote-create-session-create-1',
+      payload: { workspaceId: 'workspace-1' },
+    })
+  })
+
+  it('browses only authorized directories through opaque references and registers desktop workspaces', async () => {
+    const ctx = new Context()
+    contexts.push(ctx)
+    const root = mkdtempSync(join(tmpdir(), 'dsh-remote-workspaces-'))
+    temporaryDirectories.push(root)
+    const projects = join(root, 'projects')
+    const existing = join(projects, 'NEXA-Remote')
+    const other = join(projects, 'Other')
+    const outside = join(root, 'outside')
+    mkdirSync(existing, { recursive: true })
+    mkdirSync(other)
+    mkdirSync(outside)
+    symlinkSync(outside, join(projects, 'outside-link'))
+
+    const list = vi.fn().mockResolvedValue({
+      result: {
+        ok: true,
+        value: {
+          items: [{
+            workspaceId: 'workspace-1', path: existing, title: 'NEXA-Remote',
+            sessionIds: [], createdAt: '2026-08-24T00:00:00Z', updatedAt: '2026-08-24T00:00:00Z',
+          }],
+          archivedSessionIds: [],
+        },
+      },
+    })
+    const create = vi.fn(async ({ payload }: { payload: { path: string } }) => ({
+      result: {
+        ok: true,
+        value: {
+          workspace: {
+            workspaceId: `workspace-${payload.path.split('/').at(-1)}`, path: payload.path,
+            title: payload.path.split('/').at(-1) ?? 'workspace', sessionIds: [],
+            createdAt: '2026-08-24T00:00:00Z', updatedAt: '2026-08-24T00:00:00Z',
+          },
+          created: true,
+        },
+      },
+    }))
+    ctx.provide('agents', { get: () => undefined } as never)
+    ctx.provide('apiProxy', { workspace: { list, create }, sessions: {} } as never)
+    const adapter = new DshRemoteHarnessAdapter(ctx)
+
+    const roots = await adapter.listWorkspaceRoots()
+    expect(roots.roots).toHaveLength(1)
+    expect(JSON.stringify(roots)).not.toContain(projects)
+    const directory = await adapter.listDirectory(roots.roots[0]!.directoryRef)
+    expect(directory.entries.map(entry => entry.name)).toEqual(['NEXA-Remote', 'Other'])
+    expect(JSON.stringify(directory)).not.toContain(projects)
+
+    const otherRef = directory.entries.find(entry => entry.name === 'Other')!.directoryRef
+    await expect(adapter.registerWorkspace(otherRef, { commandId: 'register-1' })).resolves.toEqual({
+      workspace: { workspaceId: 'workspace-Other', name: 'Other' },
+      created: true,
+    })
+    expect(create).toHaveBeenCalledWith({
+      rpcId: 'remote-register-workspace-register-1',
+      payload: { path: realpathSync(other) },
+    })
+
+    await expect(adapter.createWorkspace(roots.roots[0]!.directoryRef, 'New Project', { commandId: 'create-workspace-1' }))
+      .resolves.toEqual({
+        workspace: { workspaceId: 'workspace-New Project', name: 'New Project' },
+        created: true,
+      })
+    expect(statSync(join(projects, 'New Project')).isDirectory()).toBe(true)
+    await expect(adapter.createWorkspace(roots.roots[0]!.directoryRef, '../escape'))
+      .rejects.toMatchObject({ code: 'NAME_INVALID' })
   })
 
   it('admits instructions through ApiProxy and waits for the addressed Agent', async () => {

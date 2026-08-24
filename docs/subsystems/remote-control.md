@@ -2,7 +2,7 @@
 
 English | [中文](remote-control.zh.md)
 
-The opt-in NEXA Remote bridge in [dsh-qrcode-remote](../../packages/interaction/qrcode-remote) lets a paired WeChat Mini Program observe sessions, append an instruction, stop an active run, or answer a pending approval without creating a second agent runtime. The computer is the only execution authority: it owns every session, Agent loop, model call, project and tool action. The Mini Program is only a mobile-adapted projection plus a remote-input surface; it never creates or executes a local task.
+The opt-in NEXA Remote bridge in [dsh-qrcode-remote](../../packages/interaction/qrcode-remote) turns a paired WeChat Mini Program into an application-level controller for one computer. It can observe sessions, append or stop work, answer a pending approval, create a computer Session, register a computer project directory as a workspace, and update explicitly remote-writable settings without creating a second agent runtime. The computer remains the only execution authority: it owns every Session, Agent loop, model call, project, setting and tool action; the Mini Program never executes locally or becomes a second source of truth.
 
 Source: [`packages/interaction/qrcode-remote/src/index.ts`](../../packages/interaction/qrcode-remote/src/index.ts)
 
@@ -14,11 +14,17 @@ Connection state follows the authenticated Host transport. The service retries a
 
 The Host persists the computer identity, encrypted-channel peer keys, preferences, and revocation markers by atomic replacement at the configured `statePath`, then enforces file mode `0600`. `RemoteControlState` and `RemoteControlPairingOffer` are browser-safe projections: neither returns a private identity key nor a peer channel key. The sidebar popover is therefore only a narrow connection surface, not a cryptographic owner or device-management console.
 
-## Command and event boundary
+## Application-control boundary
 
-The phone never calls an Agent implementation directly. `DshRemoteHarnessAdapter` maps `append_instruction` to `ctx.apiProxy.sessions.prompt` with queue admission and maps `stop` to the Session cancellation API. It rejects every other action, waits for the addressed Agent to become idle, and returns the final accepted or rejected status. Session events and bounded snapshots travel back through the encrypted NEXA channel, preserving the Host as the only source of session truth. The snapshot includes every non-archived desktop Session, including a blank newly created Session; only archived and subagent Sessions remain outside the primary mobile list.
+The phone never calls an Agent implementation directly. `DshRemoteHarnessAdapter` maps `session.append_instruction` to `ctx.apiProxy.sessions.prompt`, `session.stop` to the Session cancellation API, and `session.create` to `ctx.apiProxy.sessions.create`. Every mutation uses a versioned control request with an idempotency key; the Host replays completed results for retries and publishes the resulting computer snapshot instead of allowing the phone to predict success. Session events and bounded snapshots travel back through the encrypted NEXA channel, preserving the Host as the only source of Session truth. The snapshot includes every non-archived desktop Session, including a blank newly created Session; only archived and subagent Sessions remain outside the primary mobile list.
 
 The projection preserves the desktop information hierarchy instead of exposing protocol noise. Its mobile drawer shows only the current computer name, online state, and workspace/Session tree; it does not repeat a profile, product explanation, or a Remote mirror/Connect computer mode switch, and it closes through the scrim or a left swipe instead of a large close control. User and Agent messages render directly. Tool events carry a concise action plus the concrete command, file, or test target; arguments, progress, and results remain collapsed until the user opens the card, and Markdown results use a safe rendering subset. The desktop `running` field drives the phone composer between send and stop, while a phone stop request is authoritative only after the Session cancellation result returns from the computer. History pages are selected by encoded byte budget below the Relay frame limit, with explicit truncation markers and `hasMore` pagination for oversized tool output. Authenticated snapshot, history, or live frames also override delayed offline presence, preventing a healthy synchronized Session from being labelled as reconnecting.
+
+## Workspace and settings control
+
+The Host publishes `workspace.roots.list`, `workspace.directory.list`, `workspace.register`, and `workspace.create` only when its adapter implements them. Directory results contain display names and short-lived opaque references rather than absolute paths. Each request resolves the reference again, proves that the canonical directory remains under an approved root on the same device, and rejects symlinks, mount escapes, hidden or sensitive directories, traversal, nested creation, and invalid names. P0 deliberately omits move, rename, delete, upload, and arbitrary file reads or writes. A failed create operation removes the new directory only when it is still empty.
+
+The Host publishes `settings.get` and `settings.update` with descriptors for type, risk, current value and remote writability. P0 permits the computer name and keeps Relay configuration, credentials, authorization roots, security switches, and model configuration local-only. Updates include the expected `settings_revision` and a digest of the submitted setting; the computer rejects stale, unknown, mismatched, or disallowed writes and persists the new revision before the phone refreshes its projection.
 
 ## Approval fallback
 
@@ -82,5 +88,5 @@ Host-owned remote connection, pairing state, and typed settings actions.
 @Remote('revoke') revoke(request: RemoteControlRevokeRequest): RemoteControlState
 ```
 
-Source: [`packages/interaction/qrcode-remote/src/index.ts:383`](../../packages/interaction/qrcode-remote/src/index.ts)
+Source: [`packages/interaction/qrcode-remote/src/index.ts:667`](../../packages/interaction/qrcode-remote/src/index.ts)
 <!-- END GENERATED cordis-surface -->
