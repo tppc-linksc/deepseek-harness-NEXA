@@ -11,6 +11,18 @@
 
 import type { API_REMOTE_FORWARDED_EVENTS } from './remote-events.ts'
 
+declare module '@deepseek-ai/cordis' {
+  interface Events {
+    /**
+     * Tell the desktop client to open a Session created through a remote carrier.
+     * @mode emit
+     * @param sessionId - Host-created Session identifier.
+     * @param workspaceId - Workspace that owns the Session.
+     */
+    'remote-control/session-created'(sessionId: string, workspaceId: string): void
+  }
+}
+
 /** Type projection of the allowlist; the consumer and the Host read this one. */
 export type ApiRemoteForwardedEvent = typeof API_REMOTE_FORWARDED_EVENTS[number]
 

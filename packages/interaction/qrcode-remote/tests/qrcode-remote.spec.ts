@@ -179,6 +179,11 @@ describe('DshRemoteHarnessAdapter', () => {
               sessionId: 'subagent-1', cwd: '/work/NEXA-Remote', updatedAt: 90,
               running: false, blank: false, origin: 'subagent',
             },
+            {
+              sessionId: 'orphan-1', cwd: '/work/Removed', updatedAt: 89,
+              running: false, blank: false,
+              projections: { asOfSeq: 1, values: { title: '已移除会话' } },
+            },
           ],
         },
       },
@@ -232,6 +237,8 @@ describe('DshRemoteHarnessAdapter', () => {
         cursor: 0, running: false, blank: true,
       }],
     })
+    const snapshot = await adapter.getSessionSnapshot() as { sessions: Array<{ sessionId: string }> }
+    expect(snapshot.sessions.map(session => session.sessionId)).toEqual(['session-1', 'session-new'])
     await expect(adapter.getSessionHistory('session-1', { beforeCursor: 8, maxMessages: 30 }))
       .resolves.toMatchObject({
         events: [{ sessionId: 'session-1', cursor: 7, payload: { type: 'assistant/message', time: 123 } }],
@@ -259,6 +266,10 @@ describe('DshRemoteHarnessAdapter', () => {
     })
     ctx.provide('agents', { get: () => undefined } as never)
     ctx.provide('apiProxy', { sessions: { create } } as never)
+    const created: Array<[string, string]> = []
+    ctx.on('remote-control/session-created', (sessionId, workspaceId) => {
+      created.push([sessionId, workspaceId])
+    })
     const adapter = new DshRemoteHarnessAdapter(ctx)
 
     await expect(adapter.createSession('workspace-1', {}, { commandId: 'create-1' }))
@@ -272,6 +283,7 @@ describe('DshRemoteHarnessAdapter', () => {
       rpcId: 'remote-create-session-create-1',
       payload: { workspaceId: 'workspace-1' },
     })
+    expect(created).toEqual([['session-mobile-1', 'workspace-1']])
   })
 
   it('browses only authorized directories through opaque references and registers desktop workspaces', async () => {

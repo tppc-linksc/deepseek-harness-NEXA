@@ -18,7 +18,7 @@ The phone never runs an Agent, calls a model, executes a tool, stores an authori
 
 ## Remote actions
 
-The control plane covers Session creation, instruction submission, active-run cancellation, approval decisions, safe workspace registration or creation, and structured settings. Session and workspace mutations re-read the computer snapshot after success instead of inserting optimistic mobile records. Approval grants remain one-shot and use the existing DSH approval service. Ordinary user-question answering is absent until it has an equivalent typed DSH route and therefore is not advertised as a capability.
+The control plane covers Session creation, instruction submission, active-run cancellation, approval decisions, safe workspace registration or creation, and structured settings. Session and workspace mutations re-read the computer snapshot after success instead of inserting optimistic mobile records. The Session snapshot projects only workspace-owned, non-archived primary Sessions, so legacy orphan records cannot create a mobile-only workspace. A phone-created Session is attached to the requested workspace, then the desktop refreshes its Session baseline before selecting that blank Session; both surfaces therefore expose it before the first prompt. Approval grants remain one-shot and use the existing DSH approval service. Ordinary user-question answering is absent until it has an equivalent typed DSH route and therefore is not advertised as a capability.
 
 ## Workspace and settings safety
 

@@ -22,6 +22,11 @@ import {
   type SessionLogCompressionLevel,
 } from './session-export.ts'
 
+// Carrier-neutral remote event declarations live with the API Remote
+// allowlist. Re-exporting the type face lets Host plugins that consume this
+// gateway emit those events without depending back on the Remote assembly.
+export type {} from '@deepseek-ai/dsh-api-remotes/types'
+
 export type * from './api/index.ts'
 export { RpcId } from './api/rpc.ts'
 export { toFetchHandler } from './fetch/handler.ts'

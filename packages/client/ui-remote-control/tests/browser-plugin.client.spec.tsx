@@ -57,9 +57,19 @@ async function bench() {
   const locale = new LocaleRuntime(ctx)
   ctx.provide('locale', locale)
   class RemoteService extends Service {
+    private readonly listeners = new Map<string, Set<(...args: unknown[]) => void>>()
     constructor(serviceCtx: Context) { super(serviceCtx, 'remote') }
+    $on(event: string, listener: (...args: unknown[]) => void): () => void {
+      const listeners = this.listeners.get(event) ?? new Set<(...args: unknown[]) => void>()
+      listeners.add(listener)
+      this.listeners.set(event, listeners)
+      return () => { listeners.delete(listener) }
+    }
+    dispatch(event: string, ...args: unknown[]): void {
+      for (const listener of this.listeners.get(event) ?? []) listener(...args)
+    }
   }
-  new RemoteService(ctx)
+  const remoteRoot = new RemoteService(ctx)
   const remote: RemoteControlRemote = {
     state: vi.fn(() => success(DISABLED)),
     configure: vi.fn(() => success(DISABLED)),
@@ -69,11 +79,15 @@ async function bench() {
     revoke: vi.fn(() => success(DISABLED)),
   }
   ctx.provide('remote.remoteControl', remote)
+  const sessionCalls: string[] = []
+  const refresh = vi.fn(async () => { sessionCalls.push('refresh') })
+  const open = vi.fn((sessionId: string) => { sessionCalls.push(`open:${sessionId}`) })
+  ctx.provide('sessions', { refresh, open } as never)
   ctx.slots.register({
     name: 'root',
     children: { 'sidebar.footer.trailing': { kind: 'list', scope: 'root' } },
   } as never, () => null)
-  return { ctx, locale, remote }
+  return { ctx, locale, remote, remoteRoot, refresh, open, sessionCalls }
 }
 
 function propsFor(
@@ -94,7 +108,7 @@ function propsFor(
 
 describe('ui-remote-control browser plugin', () => {
   it('registers a localized compact action beside Settings', async () => {
-    expect(inject).toEqual(['slots', 'locale', 'remote', 'remote.remoteControl'])
+    expect(inject).toEqual(['slots', 'locale', 'remote', 'remote.remoteControl', 'sessions'])
     const b = await bench()
     const fiber = b.ctx.plugin({ inject: [...inject], apply })
     await fiber.await()
@@ -113,6 +127,22 @@ describe('ui-remote-control browser plugin', () => {
     expect(resolveSlotLabel(entry.options.label)).toBe('Connect mobile')
     await fiber.dispose()
     expect(b.ctx.slots.entries('sidebar.footer.trailing')).toHaveLength(0)
+    await b.ctx.fiber.dispose()
+  })
+
+  it('opens a phone-created blank Session immediately on the desktop', async () => {
+    const b = await bench()
+    const fiber = b.ctx.plugin({ inject: [...inject], apply })
+    await fiber.await()
+
+    b.remoteRoot.dispatch('remote-control/session-created', 'session-mobile-1', 'workspace-1')
+
+    await waitFor(() => {
+      expect(b.sessionCalls).toEqual(['refresh', 'open:session-mobile-1'])
+    })
+    expect(b.refresh).toHaveBeenCalledOnce()
+    expect(b.open).toHaveBeenCalledWith('session-mobile-1')
+    await fiber.dispose()
     await b.ctx.fiber.dispose()
   })
 

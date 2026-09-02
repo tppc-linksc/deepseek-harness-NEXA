@@ -302,7 +302,10 @@ export class DshRemoteHarnessAdapter implements NexaHarnessAdapter {
       return parts.at(-1) || sessionId
     }
     const sessions = sessionResponse.result.value.items
-      .filter(item => item.origin !== 'subagent')
+      // Workspace membership is the desktop tree's source of truth. Sessions
+      // left behind after a Workspace/session detachment must not reappear on
+      // the phone as a synthetic "未分组" Workspace.
+      .filter(item => item.origin !== 'subagent' && workspaceBySession.has(item.sessionId))
       .map((item) => {
         const projectedTitle = item.projections?.values.title
         return {
@@ -376,6 +379,7 @@ export class DshRemoteHarnessAdapter implements NexaHarnessAdapter {
       payload: { workspaceId: rawWorkspaceId as WorkspaceId },
     })
     if (!response.result.ok) throw new Error(response.result.error.message)
+    this.ctx.emit('remote-control/session-created', response.result.value.sessionId, rawWorkspaceId)
     return {
       sessionId: response.result.value.sessionId,
       workspaceId: rawWorkspaceId,

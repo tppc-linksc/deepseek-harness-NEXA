@@ -2,5 +2,5 @@
 # side as of the last confirmed-consistent state. Both languages carry equal authority;
 # after editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-08-24-nexa-remote-application-control.md
-2026-08-24-nexa-remote-application-control.md: 77597bc9cda0b3650ce1d09746f7fda51cd8b036
-2026-08-24-nexa-remote-application-control.zh.md: c851e366ff2d90d967a3846b54e487a521329e9b
+2026-08-24-nexa-remote-application-control.md: bc30ab3d4c1d5331e6f36072200861a82d750215
+2026-08-24-nexa-remote-application-control.zh.md: ef52811b8d5efa139144e937e9430659b9cb20f9

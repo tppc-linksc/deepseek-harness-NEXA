@@ -16,7 +16,7 @@ Host 通过原子替换把电脑身份、加密通道对端密钥、偏好与撤
 
 ## 应用控制边界
 
-手机不会直接调用 Agent 实现。`DshRemoteHarnessAdapter` 把 `session.append_instruction` 映射到 `ctx.apiProxy.sessions.prompt`，把 `session.stop` 映射到 Session 取消 API，把 `session.create` 映射到 `ctx.apiProxy.sessions.create`。每次修改都使用带幂等键的版本化控制请求；Host 会为重试回放已完成结果，并发布电脑产生的新快照，不允许手机预判成功。会话事件与有界快照通过加密的 NEXA 通道返回，因此 Host 仍是会话事实的唯一来源。快照包含每个未归档的桌面会话，包括刚创建的空白会话；只有已归档会话和 subagent 会话不进入移动端主列表。
+手机不会直接调用 Agent 实现。`DshRemoteHarnessAdapter` 把 `session.append_instruction` 映射到 `ctx.apiProxy.sessions.prompt`，把 `session.stop` 映射到 Session 取消 API，把 `session.create` 映射到 `ctx.apiProxy.sessions.create`。每次修改都使用带幂等键的版本化控制请求；Host 会为重试回放已完成结果，并发布电脑产生的新快照，不允许手机预判成功。会话事件与有界快照通过加密的 NEXA 通道返回，因此 Host 仍是会话事实的唯一来源。快照包含每个归属于工作区、未归档的桌面主会话，包括刚创建的空白会话；已归档、subagent 和孤立会话不会进入移动端主列表。Host 为手机请求创建会话并挂到工作区后，会转发 `remote-control/session-created`；桌面在选中新标识前先刷新会话基线，因此两端会在发送第一条指令前显示同一个空白会话。
 
 该投影沿用桌面信息层级，而不暴露协议噪音。移动侧栏只显示当前电脑名称、在线状态以及工作区/会话树；不重复头像、产品说明或“远程镜像/连接电脑”模式，也不提供占位关闭按钮，点击遮罩或向左滑动即可收起。用户与 Agent 消息直接渲染；工具事件提供紧凑动作以及具体命令、文件或测试目标，参数、过程与结果在用户打开卡片前保持折叠，Markdown 结果使用安全渲染子集。电脑的 `running` 字段驱动手机输入栏在发送与停止之间切换；手机停止请求只有在电脑返回 Session 取消结果后才成为权威状态。历史页按编码后的字节预算控制在 Relay 帧上限以内，大型工具输出带明确截断标记并用 `hasMore` 继续分页。已认证的快照、历史页或实时帧也会覆盖延迟的离线 Presence，避免正常同步的会话被误标为正在重连。
 
@@ -88,5 +88,27 @@ Host-owned remote connection, pairing state, and typed settings actions.
 @Remote('revoke') revoke(request: RemoteControlRevokeRequest): RemoteControlState
 ```
 
-Source: [`packages/interaction/qrcode-remote/src/index.ts:667`](../../packages/interaction/qrcode-remote/src/index.ts)
+Source: [`packages/interaction/qrcode-remote/src/index.ts:679`](../../packages/interaction/qrcode-remote/src/index.ts)
+
+<a id="remote-control-events"></a>
+
+### `remote-control/*` events
+
+<a id="remote-controlsession-created--emit"></a>
+
+#### `remote-control/session-created` — emit
+
+Tell the desktop client to open a Session created through a remote carrier.
+
+```ts cordis-catalog
+/**
+ * Tell the desktop client to open a Session created through a remote carrier.
+ * @mode emit
+ * @param sessionId - Host-created Session identifier.
+ * @param workspaceId - Workspace that owns the Session.
+ */
+'remote-control/session-created'(sessionId: string, workspaceId: string): void
+```
+
+Source: [`packages/api/remotes/src/types.ts:22`](../../packages/api/remotes/src/types.ts)
 <!-- END GENERATED cordis-surface -->

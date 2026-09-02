@@ -33,7 +33,7 @@
   "license": "MIT",
   "dependencies": {
     "@deepseek-ai/schemastery": "workspace:^",
-    "nexa-remote": "git+ssh://git@github.com/tppc-linksc/NEXA-Remote.git#d7d6e19b4afa35e181b4b726af2e27c9ad26ad8f",
+    "nexa-remote": "git+ssh://git@github.com/tppc-linksc/NEXA-Remote.git#bec8802161173b298de2716e4c43da6500fcc6ae",
     "qrcode": "^1.5.4",
     "zod": "^4.4.3"
   },

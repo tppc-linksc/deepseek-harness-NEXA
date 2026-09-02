@@ -1,6 +1,6 @@
 /** Remote Control sidebar-action registration. */
 
-import type { ClientContext } from '@deepseek-ai/dsh-client-runtime/client'
+import type { ClientContext, SessionId } from '@deepseek-ai/dsh-client-runtime/client'
 import type {} from '@deepseek-ai/dsh-client-locale/client'
 import type {} from '@deepseek-ai/dsh-client-ui-sidebar/client'
 import { RemoteControlController } from './controller.ts'
@@ -20,7 +20,7 @@ declare module '@deepseek-ai/dsh-client-ui-slots' {
 
 /** Locale namespace owned by the Remote Control sidebar contribution. */
 export const NS = 'remote-control'
-export const inject = ['slots', 'locale', 'remote', 'remote.remoteControl']
+export const inject = ['slots', 'locale', 'remote', 'remote.remoteControl', 'sessions']
 
 export function apply(ctx: ClientContext): void {
   ctx.effect(() => ctx.locale.register(NS, { zh, en }), 'ui-remote-control: dictionaries')
@@ -35,6 +35,20 @@ export function apply(ctx: ClientContext): void {
     openPairing: () => controller.openPairing(),
   })
   ctx.effect(() => () => { controller.dispose() }, 'ui-remote-control: controller lifecycle')
+  ctx.effect(
+    () => ctx.remote.$on(
+      'remote-control/session-created',
+      (sessionId) => {
+        // The carrier event can reach the browser before the Session list
+        // notification. Refreshing first preserves open()'s listed-id
+        // precondition for phone-created blank sessions.
+        void ctx.sessions.refresh()
+          .then(() => { ctx.sessions.open(sessionId as SessionId) })
+          .catch(() => undefined)
+      },
+    ),
+    'ui-remote-control: open sessions created from mobile',
+  )
   ctx.slots.inject('sidebar.footer.trailing', () => ctx.slots.register({
     name: 'sidebar.footer.trailing',
     id: 'remote-control',

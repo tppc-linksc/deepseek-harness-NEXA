@@ -16,7 +16,7 @@ The Host persists the computer identity, encrypted-channel peer keys, preference
 
 ## Application-control boundary
 
-The phone never calls an Agent implementation directly. `DshRemoteHarnessAdapter` maps `session.append_instruction` to `ctx.apiProxy.sessions.prompt`, `session.stop` to the Session cancellation API, and `session.create` to `ctx.apiProxy.sessions.create`. Every mutation uses a versioned control request with an idempotency key; the Host replays completed results for retries and publishes the resulting computer snapshot instead of allowing the phone to predict success. Session events and bounded snapshots travel back through the encrypted NEXA channel, preserving the Host as the only source of Session truth. The snapshot includes every non-archived desktop Session, including a blank newly created Session; only archived and subagent Sessions remain outside the primary mobile list.
+The phone never calls an Agent implementation directly. `DshRemoteHarnessAdapter` maps `session.append_instruction` to `ctx.apiProxy.sessions.prompt`, `session.stop` to the Session cancellation API, and `session.create` to `ctx.apiProxy.sessions.create`. Every mutation uses a versioned control request with an idempotency key; the Host replays completed results for retries and publishes the resulting computer snapshot instead of allowing the phone to predict success. Session events and bounded snapshots travel back through the encrypted NEXA channel, preserving the Host as the only source of Session truth. The snapshot includes every workspace-owned, non-archived primary desktop Session, including a blank newly created Session; archived, subagent, and orphan Sessions remain outside the primary mobile list. After the Host creates a Session for a phone request and attaches it to the workspace, it forwards `remote-control/session-created`; the desktop refreshes its Session baseline before selecting the identifier, so both surfaces show the same blank Session before any prompt.
 
 The projection preserves the desktop information hierarchy instead of exposing protocol noise. Its mobile drawer shows only the current computer name, online state, and workspace/Session tree; it does not repeat a profile, product explanation, or a Remote mirror/Connect computer mode switch, and it closes through the scrim or a left swipe instead of a large close control. User and Agent messages render directly. Tool events carry a concise action plus the concrete command, file, or test target; arguments, progress, and results remain collapsed until the user opens the card, and Markdown results use a safe rendering subset. The desktop `running` field drives the phone composer between send and stop, while a phone stop request is authoritative only after the Session cancellation result returns from the computer. History pages are selected by encoded byte budget below the Relay frame limit, with explicit truncation markers and `hasMore` pagination for oversized tool output. Authenticated snapshot, history, or live frames also override delayed offline presence, preventing a healthy synchronized Session from being labelled as reconnecting.
 
@@ -88,5 +88,27 @@ Host-owned remote connection, pairing state, and typed settings actions.
 @Remote('revoke') revoke(request: RemoteControlRevokeRequest): RemoteControlState
 ```
 
-Source: [`packages/interaction/qrcode-remote/src/index.ts:667`](../../packages/interaction/qrcode-remote/src/index.ts)
+Source: [`packages/interaction/qrcode-remote/src/index.ts:679`](../../packages/interaction/qrcode-remote/src/index.ts)
+
+<a id="remote-control-events"></a>
+
+### `remote-control/*` events
+
+<a id="remote-controlsession-created--emit"></a>
+
+#### `remote-control/session-created` — emit
+
+Tell the desktop client to open a Session created through a remote carrier.
+
+```ts cordis-catalog
+/**
+ * Tell the desktop client to open a Session created through a remote carrier.
+ * @mode emit
+ * @param sessionId - Host-created Session identifier.
+ * @param workspaceId - Workspace that owns the Session.
+ */
+'remote-control/session-created'(sessionId: string, workspaceId: string): void
+```
+
+Source: [`packages/api/remotes/src/types.ts:22`](../../packages/api/remotes/src/types.ts)
 <!-- END GENERATED cordis-surface -->

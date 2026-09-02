@@ -64,6 +64,17 @@ export interface ISessions {
   refreshSubagents(parentSessionId: SessionId): Promise<void>
 
   /**
+   * Refresh the Host-owned Session list baseline.
+   *
+   * Cross-carrier features use this before opening a Session that another
+   * client has just created. Waiting for the pull preserves `open()`'s
+   * listed-id precondition even when the creation signal arrives before the
+   * normal list notification.
+   * @returns completion of the current or newly started baseline pull.
+   */
+  refresh(): Promise<void>
+
+  /**
    * Record the composition one session now runs. The agent-preset seat calls
    * this after a successful blank-session switch, so the header label moves
    * with the composition instead of waiting for the next full list refresh.

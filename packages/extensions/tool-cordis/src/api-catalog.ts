@@ -2589,6 +2589,14 @@ export const EVENT_API: readonly EventApiEntry[] = [
     parameters: [{ name: 'options', description: 'the full request. A LOOP-built request carries the process-local {@link markAgentLoopRequest} identity and arrives deep-frozen (mutation throws): its content is a pure function of the session log (the reconstructability Agent Note), so listeners read it, never rewrite it. Hand-built calls do not carry that marker; their messages already obey the immutable creation contract.' }],
   },
   {
+    name: 'remote-control/session-created',
+    mode: 'emit',
+    signature: '\'remote-control/session-created\'(sessionId: string, workspaceId: string): void',
+    summary: 'Tell the desktop client to open a Session created through a remote carrier.',
+    description: 'Tell the desktop client to open a Session created through a remote carrier.',
+    parameters: [{ name: 'sessionId', description: 'Host-created Session identifier.' }, { name: 'workspaceId', description: 'Workspace that owns the Session.' }],
+  },
+  {
     name: 'session-telemetry/record',
     mode: 'waterfall',
     signature: '\'session-telemetry/record\'(record: SessionTelemetryRecord, next: () => SessionTelemetryRecord): SessionTelemetryRecord',
