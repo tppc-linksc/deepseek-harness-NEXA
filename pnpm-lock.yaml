@@ -20714,7 +20714,7 @@ snapshots:
 
   negotiator@1.0.0: {}
 
-  nexa-remote@git+ssh://git@github.com:tppc-linksc/NEXA-Remote.git#bec8802161173b298de2716e4c43da6500fcc6ae:
+  nexa-remote@git+ssh://git@github.com/tppc-linksc/NEXA-Remote.git#bec8802161173b298de2716e4c43da6500fcc6ae:
     dependencies:
       ws: 8.21.0
     transitivePeerDependencies:
