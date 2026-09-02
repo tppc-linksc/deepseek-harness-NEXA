@@ -289,6 +289,21 @@ describe('DeepSeek e2e workflow', () => {
   })
 })
 
+describe('Sandbox workflow', () => {
+  it('limits macOS unit parity to sandbox behavior that depends on native paths', () => {
+    const workflow = loadWorkflow('.github/workflows/sandbox.yml')
+    const sandbox = workflowJob(workflow, 'sandbox-e2e')
+    if (!Array.isArray(sandbox.steps)) throw new TypeError('Sandbox workflow must define steps')
+
+    const parity = sandbox.steps.filter(isRecord).find(step => step.name === 'Unit tests (darwin parity)')
+    expect(parity).toMatchObject({
+      if: "matrix.runner == 'seatbelt'",
+      run: 'pnpm exec vitest run packages/sandbox/sandbox/tests/roots.spec.ts packages/sandbox/sandbox-local/tests/local.spec.ts',
+    })
+    expect(JSON.stringify(parity)).not.toContain('pnpm run test')
+  })
+})
+
 describe('npm release workflows', () => {
   it('keeps upstream publication rehearsals opt-in for downstream repositories', () => {
     for (const path of ['.github/workflows/release.yml', '.github/workflows/release-vendor.yml']) {

@@ -91,13 +91,13 @@ jobs:
           pnpm --dir native/landlock-run run build:ts
           pnpm --dir native/landlock-run run build:native
 
-      # The unit suite runs on ubuntu in `checks`; this is the one darwin leg
-      # in the workflow, so run it here too — the platform-dependent unit
-      # expectations (Seatbelt path canonicalization: /tmp IS /private/tmp)
-      # take their darwin branch only on this runner.
+      # The complete unit inventory belongs to `checks`. This darwin leg runs
+      # the sandbox units whose expected roots depend on native path
+      # canonicalization (`/tmp` IS `/private/tmp`), then the real Seatbelt
+      # proof below exercises the host kernel.
       - name: Unit tests (darwin parity)
         if: matrix.runner == 'seatbelt'
-        run: pnpm run test
+        run: pnpm exec vitest run packages/sandbox/sandbox/tests/roots.spec.ts packages/sandbox/sandbox-local/tests/local.spec.ts
 
       - name: Sandbox e2e (real kernel confinement, world-verified)
         # NO_COLOR: vitest force-enables ANSI color under GITHUB_ACTIONS even
