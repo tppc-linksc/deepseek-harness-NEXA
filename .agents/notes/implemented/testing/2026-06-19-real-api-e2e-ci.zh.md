@@ -8,15 +8,15 @@ Status: implemented
 
 根据策略，harness 高度依赖真实 API 测试：[docs/testing.md](../../../../docs/testing.md) 指出，无密钥套件证明的是管线，而非产品；[ACP（Agent Client Protocol）inject 事故复盘（postmortem）](../../../../docs/postmortem/0001-acp-default-export-drops-inject.md)则是常设证据——178 项无密钥测试保持绿色时，真实 ACP 客户端会话却立即崩溃。真实 API e2e 套件（`pnpm run test:e2e`，即 `*.e2e.ts` 文件）的存在正是为了弥合这一缺口：它针对线上 DeepSeek API 驱动 agent（智能体）——真实模型调用、真实 bash 工具、多轮次、恢复、ACP-over-stdio。
 
-默认门禁（[.github/workflows/ci.yml](../../../../.github/workflows/ci.yml)）刻意无密钥：不携带 secret，可供 fork 运行。`test:e2e` 在无密钥时自动跳过（`describe.skipIf(!process.env.DEEPSEEK_API_KEY)`），因此将其加入该工作流只会报绿而不会真正执行真实套件。要让真实 API 覆盖率成为合并信号，需要一个独立的、携带 secret 的工作流。
+官方仓库的默认门禁（[.github/workflows/ci.yml](../../../../.github/workflows/ci.yml)）刻意不携带模型 API 凭据。`test:e2e` 在无密钥时自动跳过（`describe.skipIf(!process.env.DEEPSEEK_API_KEY)`），因此将其加入该工作流只会报绿而不会真正执行真实套件。要让真实 API 覆盖率成为合并信号，需要一个独立的、携带 secret 的工作流。下游发行版可能需要有限的安装凭据来读取自己的私有依赖；[NEXA 的只读 deploy key 决策](../process/2026-09-02-private-nexa-remote-ci-authentication.md)负责这项独立问题及其 fork 限制。
 
 ## 决策
 
-一个与 ci.yml 分离的专用工作流 [.github/workflows/e2e.yml](../../../../.github/workflows/e2e.yml) 使用 repo secret 对外部 API 运行且仅运行 `pnpm run test:e2e`，仅在可信事件上触发，并带有一个 preflight 检查：将缺失的 secret 转化为明确的失败而非虚假的绿色。无密钥工作流保持独立，使可 fork 的质量门禁与消费 secret 的真实 API 门禁各自拥有不同的触发和凭证策略。
+一个与 ci.yml 分离的专用工作流 [.github/workflows/e2e.yml](../../../../.github/workflows/e2e.yml) 使用 repo secret 对外部 API 运行且仅运行 `pnpm run test:e2e`，仅在可信事件上触发，并带有一个 preflight 检查：将缺失的 secret 转化为明确的失败而非虚假的绿色。官方 `deepseek-ai/deepseek-harness` 仓库通过身份默认启用该 job；下游 fork 必须配置自己的密钥并设置 `DSH_REAL_API_E2E_ENABLED=true`。无密钥工作流保持独立，使可 fork 的质量门禁与消费 secret 的真实 API 门禁各自拥有不同的触发和凭证策略。
 
 ### 独立工作流，而非 ci.yml 中的一个 job
 
-ci.yml 的价值在于它无密钥、可 fork、始终为绿：任何贡献者（包括外部 fork）都能获得完整的无密钥信号，secret 不在爆炸半径内。在其中添加消费 secret 的 job 会将这个始终为绿的门禁耦合到凭证可用性和不同的触发策略上。将携带 secret 的工作放在独立文件中，隔离了 secret、触发和并发策略，并为 fork 保留了 ci.yml 的特性。不同的生命周期→不同的文件。
+在官方仓库中，ci.yml 的价值在于它不携带模型 API 凭据，并向贡献者提供完整的无密钥信号。在其中添加外部 API job 会把该门禁耦合到模型凭据可用性和不同的触发策略上。将模型 secret 工作放在独立文件中，可以隔离其 secret、触发和并发策略。添加私有依赖的下游发行版无法再向外部 fork 承诺完整 CI；它范围受限的安装凭据不改变模型 API 访问与日常检查相分离的原则。
 
 ### 约束不是成本，而是可靠性
 
@@ -24,7 +24,7 @@ ci.yml 的价值在于它无密钥、可 fork、始终为绿：任何贡献者�
 
 ### 触发条件：仅限可信事件
 
-`workflow_dispatch` + `push` 到 `main`/`master` + 每夜 `schedule`（`17 0 * * *`，即北京时间 08:17）+ `pull_request`。push 提供合并后信号；schedule 捕捉外部 API 漂移；dispatch 是手动逃生通道；可信 PR 获得合并前门禁。该合并前信号有意接受 § 安全性中描述的更大密钥暴露面。
+`workflow_dispatch` + `push` 到 `main`/`master` + 每夜 `schedule`（`17 0 * * *`，即北京时间 08:17）+ `pull_request`。push 提供合并后信号；schedule 捕捉外部 API 漂移；dispatch 是手动逃生通道；可信 PR 获得合并前门禁。job 级仓库守卫让这些触发器在未配置的下游 fork 中干净跳过。已启用仓库的合并前信号有意接受 § 安全性中描述的更大密钥暴露面。
 
 ### 不可信 PR 的门禁
 
@@ -60,9 +60,9 @@ DeepSeek 原生 `web_search` 探测已注册但会跳过。线上 Anthropic 兼�
 
 ## 安全性
 
-仓库的首个 CI secret 需要一份记录在案的威胁模型，因为同仓库 PR、fork PR 和 Dependabot PR 的访问权限各不相同，且仓库公开后会发生变化。
+外部 API secret 需要一份记录在案的威胁模型，因为同仓库 PR、fork PR 和 Dependabot PR 的访问权限各不相同。
 
-### 当前谁能触及 secret（私有仓库）
+### 谁能触及 secret
 
 - **无写权限（fork PR）：不能。** 两个独立事实阻止了它。第一，工作流使用 `pull_request` 而**非** `pull_request_target`——GitHub 不会将 repo secret 传递给 fork PR 的 `pull_request` 运行，因此 `secrets.DEEPSEEK_API_KEY_EXTERNAL` 在 fork runner 上解析为空。第二，`if:` 门禁完全跳过 fork PR。secret 扣留是真正的边界；门禁是纵深防御和用户体验。
 - **有写（push）权限：能。** 同仓库分支 PR 会收到 secret，因此有写权限的作者可以修改测试代码（或安装生命周期脚本，或其分支上的工作流 YAML）来窃取密钥。这**是 GitHub Actions 的固有特性，并非本文引入的**：任何对任何仓库有 push 权限的人都可以通过编写工作流来窃取该仓库的任何 Actions secret。写权限⇒secret 访问权，始终如此。缓解措施在于谁被授予写权限以及分支保护，而非本文件。
@@ -73,28 +73,28 @@ DeepSeek 原生 `web_search` 探测已注册但会跳过。线上 Anthropic 兼�
 
 由于启用了 PR 运行，密钥会在合并前被交给**写权限作者 PR 分支上的代码**。这比 `push` + `schedule` + `workflow_dispatch` 的暴露面更大，为在可信写权限集合内获得合并前信号而接受。如果这一权衡发生变化，可移除 `pull_request` 触发器，同时保留合并后、每夜和按需覆盖。
 
-### 仓库公开后的变化
+### 公开仓库控制措施
 
-**通过本工作流**，secret 对公众仍然受保护：`pull_request` 在公开仓库上行为一致——fork PR（现在任何人都能开）仍然收不到 secret，且在公开仓库上 GitHub 额外要求维护者批准 fork PR 运行，即使批准后运行也不会获得 secret（批准运行不等于交出密钥）。写权限集合不因可见性改变而改变，因此内部人员的现实也不变。
+**通过本工作流**，secret 对公众仍然受保护：fork PR 收不到 secret，维护者批准运行 fork PR 也不等于交出密钥。仓库日志公开可读，因此工作流绝不回显 secret 或其长度。禁止使用 `pull_request_target` 触发器，因为它可能把 base 仓库 secret 与不可信 fork 代码组合起来。
 
-变差的是*周边*模型，以下是翻转可见性之前需要处理的事项：
+保持该模型需要以下仓库控制措施：
 
-- **日志变为全球可读。** 今天泄露给组织成员的粗心 secret 回显，公开后会泄露给整个互联网并在数分钟内被爬取。secret 处理纪律（不回显值/长度——已做到）的重要性大幅提升。
-- **`pull_request_target` 陷阱变为灾难性的。** 如果有人为了「修复」PR 运行而将触发器切换为 `pull_request_target`，工作流将在 base-repo 上下文中运行不可信的 fork 代码并**携带** secret——完整的密钥泄露向量。在私有仓库中这勉强无害，在公开仓库中则是灾难。e2e.yml 中触发器上的 `SECURITY —` 注释禁止此更改并指向本文。
-- **翻转时轮换密钥。** 密钥曾存在于私有仓库的 CI 中；将公开视为「假定已暴露」，在那一刻轮换 `DEEPSEEK_API_KEY_EXTERNAL`。
-- **将 secret 置于控制之下。** 确认 Settings → Actions → *"Send secrets to workflows from fork pull requests"* 保持**关闭**（这是唯一真正会打破 fork 边界的设置），并考虑将密钥移入带有 required reviewers 的 GitHub **Environment**，使即使已合并的代码也只在受控条件下使用它，且轮换有单一归属。
+- 确保 Settings → Actions → *"Send secrets to workflows from fork pull requests"* 保持**关闭**。
+- 工作流不得使用 `pull_request_target`；e2e.yml 中的 `SECURITY —` 注释记录了这一禁令。
+- 在怀疑泄漏或仓库可见性改变后轮换 `DEEPSEEK_API_KEY_EXTERNAL`。
+- 如果可信写权限集合扩大到超出已接受的合并前暴露范围，考虑使用带 required reviewers 的 GitHub Environment。
 
-以上均不需要修改工作流即可公开；它们是运维步骤加上已添加的 `pull_request_target` 守卫注释。
+NEXA 发行版的只读依赖密钥遵循相同的 fork secret 扣留规则，但其影响范围仅限单个仓库，并由独立 Agent Note 记录。
 
 ## 曾考虑的替代方案
 
-- **在 ci.yml 中添加消费 secret 的 job**：否决。会将无密钥、可 fork、始终为绿的门禁耦合到凭证可用性和不同的触发/并发策略上；不同的生命周期，不同的文件。
+- **把外部 API secret 放入 ci.yml**：否决。会将日常检查耦合到模型凭据可用性和不同的触发/并发策略上。NEXA 的只读依赖密钥属于安装基础设施，由独立决策负责。
 - **省略 `pull_request` 触发器**（更小的密钥暴露面）：为获得合并前信号而否决；安全性章节承载了已接受的暴露分析。
 
 ## 后果
 
-新增一个 CI 工作流和仓库的首个需要维护的 secret。真实 API 套件现在作为合并门禁（可信 PR 上的合并前门禁、主分支上的合并后门禁）并每夜运行，因此 agent 与外部 API 交互中的真实故障会在 CI 中浮现，而非仅在开发者的本地运行中出现——代价是每个可信 PR 和合并都会产生真实的（但内部免费的）API 调用。preflight 使 secret 配置错误变为自我通告而非静默禁用安全网。
+每个选择启用的仓库都要维护一个独立 CI 工作流和专用 repo secret。真实 API 套件在启用后作为合并门禁（可信 PR 上的合并前门禁、主分支上的合并后门禁）并每夜运行，因此 agent 与外部 API 交互中的真实故障会在 CI 中浮现，而非仅在开发者的本地运行中出现——代价是每个可信 PR 和合并都会产生真实的（但内部免费的）API 调用。未配置的下游 fork 会干净跳过；在已启用仓库中，preflight 使 secret 配置错误变为自我通告而非静默禁用安全网。
 
-该设计带有已记录的约束表面：`pull_request` 触发器在密钥暴露方面的取舍（删除它可加强防护）、`if:` 门禁对基于作者的 Dependabot 检查的依赖，以及对 `pull_request_target` 的严格禁止。上方公开仓库检查清单是操作配套——未来维护者在更改触发器集合或切换仓库可见性之前，应重新阅读本 Agent Note，而不是从头推导 fork/secret 模型。
+该设计带有已记录的约束表面：`pull_request` 触发器在密钥暴露方面的取舍（删除它可加强防护）、`if:` 门禁对基于作者的 Dependabot 检查的依赖，以及对 `pull_request_target` 的严格禁止。上方公开仓库控制措施是操作配套；未来维护者在更改触发器集合或仓库可见性之前，应重新阅读本 Agent Note。
 
 schedule 触发器在仓库不活跃 60 天后会自动禁用（GitHub 行为）；push/PR/dispatch 是后备，活跃的 monorepo 不会触及此限制。假设 runner 对 `https://api.deepseek.com` 有出站连通性——GitHub 托管的 `ubuntu-latest` 具备此条件；受出站限制的自托管 runner 需要在依赖每夜运行之前确认连通性。

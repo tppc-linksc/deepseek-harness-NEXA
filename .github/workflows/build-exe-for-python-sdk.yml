@@ -25,6 +25,10 @@ on:
         type: boolean
         required: false
         default: false
+    secrets:
+      NEXA_REMOTE_DEPLOY_KEY:
+        description: Read-only deploy key for the private NEXA Remote package.
+        required: true
   workflow_dispatch:
     inputs:
       targets:
@@ -178,6 +182,10 @@ jobs:
           key: pkg-fetch-${{ matrix.target }}-${{ hashFiles('pnpm-lock.yaml') }}
           restore-keys: |
             pkg-fetch-${{ matrix.target }}-
+
+      - uses: ./.github/actions/configure-nexa-remote
+        with:
+          deploy_key: ${{ secrets.NEXA_REMOTE_DEPLOY_KEY }}
 
       - name: Install (immutable)
         run: pnpm install --frozen-lockfile

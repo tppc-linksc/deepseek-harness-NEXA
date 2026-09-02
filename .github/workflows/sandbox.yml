@@ -64,6 +64,10 @@ jobs:
         with:
           node-version: 24
 
+      - uses: ./.github/actions/configure-nexa-remote
+        with:
+          deploy_key: ${{ secrets.NEXA_REMOTE_DEPLOY_KEY }}
+
       - name: Install (immutable)
         run: pnpm install --frozen-lockfile
 

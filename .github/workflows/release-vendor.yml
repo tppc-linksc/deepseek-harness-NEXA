@@ -66,6 +66,10 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-node-${{ env.PRIMARY_NODE_VERSION }}-pnpm-
 
+      - uses: ./.github/actions/configure-nexa-remote
+        with:
+          deploy_key: ${{ secrets.NEXA_REMOTE_DEPLOY_KEY }}
+
       - name: Install (immutable)
         run: pnpm install --frozen-lockfile
 
@@ -117,6 +121,10 @@ jobs:
         with:
           node-version: ${{ env.PRIMARY_NODE_VERSION }}
           registry-url: https://registry.npmjs.org
+
+      - uses: ./.github/actions/configure-nexa-remote
+        with:
+          deploy_key: ${{ secrets.NEXA_REMOTE_DEPLOY_KEY }}
 
       - name: Install (immutable, no package scripts)
         run: pnpm install --frozen-lockfile --ignore-scripts

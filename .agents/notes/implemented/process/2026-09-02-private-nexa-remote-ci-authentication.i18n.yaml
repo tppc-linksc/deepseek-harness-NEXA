@@ -1,0 +1,6 @@
+# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
+# side as of the last confirmed-consistent state. Both languages carry equal authority;
+# after editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/process/2026-09-02-private-nexa-remote-ci-authentication.md
+2026-09-02-private-nexa-remote-ci-authentication.md: 5aa86761e5c2b80e899fe2e2e6a41f0e8d516601
+2026-09-02-private-nexa-remote-ci-authentication.zh.md: 3bcf36481ff072a49aa5412ddfc40a5653fa3ebe

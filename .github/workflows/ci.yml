@@ -107,6 +107,10 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-node-${{ env.PRIMARY_NODE_VERSION }}-pnpm-
 
+      - uses: ./.github/actions/configure-nexa-remote
+        with:
+          deploy_key: ${{ secrets.NEXA_REMOTE_DEPLOY_KEY }}
+
       - name: Install (immutable)
         run: pnpm install --frozen-lockfile
 
@@ -160,6 +164,10 @@ jobs:
           key: ${{ runner.os }}-node-${{ env.PRIMARY_NODE_VERSION }}-pnpm-${{ hashFiles('pnpm-lock.yaml') }}
           restore-keys: |
             ${{ runner.os }}-node-${{ env.PRIMARY_NODE_VERSION }}-pnpm-
+
+      - uses: ./.github/actions/configure-nexa-remote
+        with:
+          deploy_key: ${{ secrets.NEXA_REMOTE_DEPLOY_KEY }}
 
       - name: Install dependencies and prepare bubblewrap
         run: |
@@ -236,6 +244,10 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-playwright-
 
+      - uses: ./.github/actions/configure-nexa-remote
+        with:
+          deploy_key: ${{ secrets.NEXA_REMOTE_DEPLOY_KEY }}
+
       - name: Install dependencies and prepare bubblewrap
         run: |
           pnpm install --frozen-lockfile &
@@ -295,6 +307,10 @@ jobs:
           node-version: ${{ matrix.node }}
           cache: pnpm
 
+      - uses: ./.github/actions/configure-nexa-remote
+        with:
+          deploy_key: ${{ secrets.NEXA_REMOTE_DEPLOY_KEY }}
+
       - name: Install (immutable)
         run: pnpm install --frozen-lockfile
 
@@ -329,6 +345,7 @@ jobs:
     if: github.event_name == 'pull_request'
     name: python runtime / release-shaped Linux x64
     uses: ./.github/workflows/build-exe-for-python-sdk.yml
+    secrets: inherit
     with:
       targets: node24-linux-x64
       ci: true
@@ -416,6 +433,10 @@ jobs:
             sudo apt-get install -y --no-install-recommends wine
           fi
 
+      - uses: ./.github/actions/configure-nexa-remote
+        with:
+          deploy_key: ${{ secrets.NEXA_REMOTE_DEPLOY_KEY }}
+
       - name: Run the Wine Windows gates
         run: bash scripts/wine-windows-gates.sh
 
@@ -502,6 +523,10 @@ jobs:
       # install on hosted Windows runners, and saving it adds latency after
       # the gates. The self-hosted VM's persistent store makes caching
       # redundant.
+      - uses: ./.github/actions/configure-nexa-remote
+        with:
+          deploy_key: ${{ secrets.NEXA_REMOTE_DEPLOY_KEY }}
+
       - name: Install (immutable)
         shell: pwsh
         run: pnpm install --frozen-lockfile
@@ -547,6 +572,10 @@ jobs:
       - name: Configure persistent pnpm store
         run: echo "PNPM_CONFIG_STORE_DIR=$HOME/.local/share/pnpm/store" >> "$GITHUB_ENV"
 
+      - uses: ./.github/actions/configure-nexa-remote
+        with:
+          deploy_key: ${{ secrets.NEXA_REMOTE_DEPLOY_KEY }}
+
       - name: Install (immutable)
         run: pnpm install --frozen-lockfile
 
@@ -585,6 +614,10 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: ${{ env.PRIMARY_NODE_VERSION }}
+
+      - uses: ./.github/actions/configure-nexa-remote
+        with:
+          deploy_key: ${{ secrets.NEXA_REMOTE_DEPLOY_KEY }}
 
       - name: Install (immutable)
         run: pnpm install --frozen-lockfile
@@ -636,6 +669,10 @@ jobs:
         run: |
           $storeRoot = "$env:LOCALAPPDATA\pnpm\store"
           echo "PNPM_CONFIG_STORE_DIR=$storeRoot" >> $env:GITHUB_ENV
+
+      - uses: ./.github/actions/configure-nexa-remote
+        with:
+          deploy_key: ${{ secrets.NEXA_REMOTE_DEPLOY_KEY }}
 
       - name: Install (immutable)
         shell: pwsh
@@ -728,6 +765,10 @@ jobs:
           console.log(JSON.stringify({ arch: process.arch, cpus: os.cpus().length,
           memoryGiB: Math.round(os.totalmem() / 2 ** 30) }))"
 
+      - uses: ./.github/actions/configure-nexa-remote
+        with:
+          deploy_key: ${{ secrets.NEXA_REMOTE_DEPLOY_KEY }}
+
       - name: Install (immutable)
         run: pnpm install --frozen-lockfile
 
@@ -818,6 +859,10 @@ jobs:
           node -e "const os = require('node:os');
           console.log(JSON.stringify({ arch: process.arch, cpus: os.cpus().length,
           memoryGiB: Math.round(os.totalmem() / 2 ** 30) }))"
+
+      - uses: ./.github/actions/configure-nexa-remote
+        with:
+          deploy_key: ${{ secrets.NEXA_REMOTE_DEPLOY_KEY }}
 
       - name: Install and prepare Linux
         if: matrix.platform == 'linux'

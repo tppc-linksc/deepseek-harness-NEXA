@@ -1,0 +1,13 @@
+name: Configure NEXA Remote access
+description: Configure a job-scoped read-only SSH identity for the private NEXA Remote dependency.
+
+inputs:
+  deploy_key:
+    description: Read-only deploy key registered on the NEXA-Remote repository.
+    required: true
+
+runs:
+  using: node24
+  main: main.mjs
+  post: cleanup.mjs
+  post-if: always()

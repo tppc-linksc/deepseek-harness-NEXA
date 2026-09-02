@@ -1,10 +1,12 @@
-import { readFileSync } from 'node:fs'
+import { readFileSync, readdirSync } from 'node:fs'
 import { resolve } from 'node:path'
 import * as yaml from 'js-yaml'
 import { describe, expect, it } from 'vitest'
 
 const root = resolve(import.meta.dirname, '..')
 const runnerPrivatePnpmDestination = '${{ runner.temp }}/setup-pnpm'
+const privateDependencyAction = './.github/actions/configure-nexa-remote'
+const privateDependencySecret = '${{ secrets.NEXA_REMOTE_DEPLOY_KEY }}'
 
 describe('CI workflow', () => {
   it('isolates every pnpm action setup destination per runner', () => {
@@ -23,6 +25,38 @@ describe('CI workflow', () => {
     for (const { jobName, step } of setups) {
       expect(step, `${jobName} must not share pnpm/action-setup's default destination`).toMatchObject({
         with: { dest: runnerPrivatePnpmDestination },
+      })
+    }
+  })
+
+  it('configures the private NEXA Remote dependency before every complete workspace install', () => {
+    const workflowDirectory = resolve(root, '.github/workflows')
+    const workflowPaths = readdirSync(workflowDirectory)
+      .filter(path => path.endsWith('.yml') || path.endsWith('.yaml'))
+
+    const installs: Array<{ path: string; jobName: string; stepIndex: number; steps: unknown[] }> = []
+    for (const path of workflowPaths) {
+      const workflow = loadWorkflow(`.github/workflows/${path}`)
+      if (!isRecord(workflow.jobs)) continue
+      for (const [jobName, job] of Object.entries(workflow.jobs)) {
+        if (!isRecord(job) || !Array.isArray(job.steps)) continue
+        for (const [stepIndex, step] of job.steps.entries()) {
+          if (!isRecord(step) || typeof step.run !== 'string') continue
+          const completeInstall = step.run.includes('pnpm install')
+            && !step.run.includes('--filter @deepseek-ai/node-addon-landlock-run-workspace...')
+          const wineInstall = step.run.includes('scripts/wine-windows-gates.sh')
+          if (completeInstall || wineInstall) installs.push({ path, jobName, stepIndex, steps: job.steps })
+        }
+      }
+    }
+
+    expect(installs.length).toBeGreaterThan(0)
+    for (const { path, jobName, stepIndex, steps } of installs) {
+      const authentication = steps.slice(0, stepIndex).findLast(step => (
+        isRecord(step) && step.uses === privateDependencyAction
+      ))
+      expect(authentication, `${path}:${jobName} must configure NEXA Remote before installing`).toMatchObject({
+        with: { deploy_key: privateDependencySecret },
       })
     }
   })
@@ -244,6 +278,8 @@ describe('DeepSeek e2e workflow', () => {
     const e2e = workflowJob(workflow, 'e2e')
     if (!Array.isArray(e2e.steps)) throw new TypeError('DeepSeek e2e workflow must define steps')
 
+    expect(e2e.if).toContain("github.repository == 'deepseek-ai/deepseek-harness'")
+    expect(e2e.if).toContain("vars.DSH_REAL_API_E2E_ENABLED == 'true'")
     const steps = e2e.steps.filter(isRecord)
     expect(steps.find(step => step.name === 'Prepare bubblewrap (unrestrict userns)')).toMatchObject({
       run: 'bash scripts/prepare-ci-bubblewrap.sh',
