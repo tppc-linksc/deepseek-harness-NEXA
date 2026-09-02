@@ -7,6 +7,7 @@ const root = resolve(import.meta.dirname, '..')
 const runnerPrivatePnpmDestination = '${{ runner.temp }}/setup-pnpm'
 const privateDependencyAction = './.github/actions/configure-nexa-remote'
 const privateDependencySecret = '${{ secrets.NEXA_REMOTE_DEPLOY_KEY }}'
+const officialPushInfrastructure = "(github.repository == 'deepseek-ai/deepseek-harness' || vars.DSH_CI_PUSH_INFRA_ENABLED == 'true') && github.event_name == 'push' && github.ref == 'refs/heads/master'"
 
 describe('CI workflow', () => {
   it('isolates every pnpm action setup destination per runner', () => {
@@ -115,11 +116,11 @@ describe('CI workflow', () => {
     expect(nativeCommandSteps.map(step => step.run)).toContain('pnpm run check:ci:windows-complete')
 
     // wine-apt-cache: master-only, seeds the Wine apt cache.
-    expect(wineAptCache.if).toBe("github.event_name == 'push' && github.ref == 'refs/heads/master'")
+    expect(wineAptCache.if).toBe(officialPushInfrastructure)
     expect(wineAptCache['runs-on']).toBe('ubuntu-latest')
 
     // serial-windows: master-only standby, self-hosted, non-blocking.
-    expect(serialWindows.if).toBe("github.event_name == 'push' && github.ref == 'refs/heads/master'")
+    expect(serialWindows.if).toBe(officialPushInfrastructure)
     expect(serialWindows['runs-on']).toEqual(['self-hosted', 'dsh-win-ci', 'windows'])
     expect(serialWindows.name).toBe('serial / windows (self-hosted standby)')
 
@@ -166,7 +167,7 @@ describe('CI workflow', () => {
       if (!isRecord(job)) throw new TypeError(`${name} must be defined`)
       expect(job.concurrency).toBeUndefined()
       // Both stay master-push-only; that is what makes the push carve-out safe.
-      expect(job.if).toBe("github.event_name == 'push' && github.ref == 'refs/heads/master'")
+      expect(job.if).toBe(officialPushInfrastructure)
     }
 
     // What bounds the cost of exempting push: a master push may only carry the
@@ -285,6 +286,22 @@ describe('DeepSeek e2e workflow', () => {
       run: 'bash scripts/prepare-ci-bubblewrap.sh',
     })
     expect(JSON.stringify(steps)).not.toContain('apt-get')
+  })
+})
+
+describe('npm release workflows', () => {
+  it('keeps upstream publication rehearsals opt-in for downstream repositories', () => {
+    for (const path of ['.github/workflows/release.yml', '.github/workflows/release-vendor.yml']) {
+      const workflow = loadWorkflow(path)
+      const pack = workflowJob(workflow, 'pack')
+
+      expect(pack.if, `${path} must default to the official repository`).toContain(
+        "github.repository == 'deepseek-ai/deepseek-harness'",
+      )
+      expect(pack.if, `${path} must expose an explicit downstream opt-in`).toContain(
+        "vars.DSH_NPM_RELEASE_CI_ENABLED == 'true'",
+      )
+    }
   })
 })
 
