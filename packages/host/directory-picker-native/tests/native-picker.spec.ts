@@ -45,6 +45,21 @@ describe('native directory picker', () => {
     await expect(pickNativeDirectory(signal(), { platform: 'darwin', run })).rejects.toThrow('command failed')
   })
 
+  it('turns a stalled osascript into an actionable error instead of hanging', async () => {
+    // A stalled chooser aborts the child via the stall timeout; the caller's
+    // own signal stays live, so this is not user cancellation.
+    const run = vi.fn<DirectoryPickerRunner>(async () => { throw failure('ABORT_ERR') })
+    await expect(pickNativeDirectory(signal(), { platform: 'darwin', run }))
+      .rejects.toThrow(/did not respond.*automation permission/s)
+
+    // A caller abort stays the caller's error, not a stall report.
+    const abort = new AbortController()
+    abort.abort(new Error('closed'))
+    const run2 = vi.fn<DirectoryPickerRunner>(async () => { throw failure('ABORT_ERR') })
+    await expect(pickNativeDirectory(abort.signal, { platform: 'darwin', run: run2 }))
+      .rejects.toThrow('command failed')
+  })
+
   it.each([
     ['a primitive error', 'failed'],
     ['an invalid code type', { code: true }],

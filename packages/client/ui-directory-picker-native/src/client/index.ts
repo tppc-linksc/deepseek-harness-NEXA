@@ -6,6 +6,12 @@
  * through the owner conversation. Mounting this package therefore composes
  * both sides of the native interaction with one cordis.yml row; no client
  * code branches on a capability kind.
+ *
+ * Inside the Electron shell (dsh-desktop) the preload exposes
+ * `window.dshDesktop.pickDirectory`, which opens Electron's own directory
+ * dialog through IPC: macOS automation (TCC) permissions are not involved, so
+ * the pick cannot silently hang when the osascript chooser is blocked. The
+ * shell's presence is detected per pick; browsers keep the host-side chooser.
  */
 import type { ClientContext } from '@deepseek-ai/dsh-client-runtime/client'
 // Type-only: pulls the SlotMap merge declaring the directory-flow holes.
@@ -24,7 +30,13 @@ export const inject = ['slots', 'workspaces']
  * @param ctx - client root context.
  */
 export function apply(ctx: ClientContext): void {
-  const injected = (): NativeFlowInjected => ({ pick: () => ctx.workspaces.pickDirectory() })
+  const injected = (): NativeFlowInjected => ({
+    pick: () => {
+      const desktop = (globalThis as { dshDesktop?: { pickDirectory?: () => Promise<string | null> } }).dshDesktop
+      if (desktop?.pickDirectory !== undefined) return desktop.pickDirectory()
+      return ctx.workspaces.pickDirectory()
+    },
+  })
   // Both declaration lifetimes must be live before the pair installs; the
   // generator makes the two registrations one transactional effect. The
   // outer/inner nesting order is arbitrary; neither hole has precedence.

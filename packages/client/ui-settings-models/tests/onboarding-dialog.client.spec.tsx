@@ -66,6 +66,8 @@ function harness(options: {
   providersReject?: boolean
   setFailure?: string
   setReject?: string
+  /** The user previously dismissed the key prompt (durable skip marker set). */
+  onboardingSkipped?: boolean
 } = {}) {
   if (document.getElementById('root') === null) {
     const appRoot = document.createElement('div')
@@ -103,7 +105,12 @@ function harness(options: {
       describe: () => Promise.resolve(ok({
         writable: options.settingsWritable ?? true,
         hasDocument: false,
-        namespaces: options.settingsNamespace === false ? [] : [deepSeekNamespace(apiKeyEnv)],
+        namespaces: options.settingsNamespace === false ? [] : [
+          deepSeekNamespace(apiKeyEnv),
+          ...(options.onboardingSkipped === true
+            ? [{ ns: 'ui-onboarding', writable: true, value: { deepseekOfficialSkipped: '1' } }]
+            : []),
+        ],
       })),
       mutate,
     },
@@ -211,15 +218,22 @@ describe('DeepSeekOnboardingDialog', () => {
     }
   })
 
-  it('allows configure-later dismissal without opening settings', async () => {
+  it('allows configure-later dismissal and persists the skip', async () => {
     const h = harness()
     render(<DeepSeekOnboardingDialog {...h.props} />)
     await screen.findByRole('dialog')
     fireEvent.click(screen.getByRole('button', { name: en.onboardingLater }))
-    expect(h.complete).toHaveBeenCalledOnce()
+    await waitFor(() => expect(h.complete).toHaveBeenCalledOnce())
     expect(h.openSection).not.toHaveBeenCalled()
     expect(h.set).not.toHaveBeenCalled()
-    expect(h.mutate).not.toHaveBeenCalled()
+    expect(h.mutate).toHaveBeenCalledOnce()
+  })
+
+  it('stays closed when the user already dismissed the prompt', async () => {
+    const h = harness({ onboardingSkipped: true })
+    render(<DeepSeekOnboardingDialog {...h.props} />)
+    await waitFor(() => expect(h.complete).toHaveBeenCalledOnce())
+    expect(screen.queryByRole('dialog')).toBeNull()
   })
 
   it('does not block the product when DeepSeek setup is unavailable', async () => {

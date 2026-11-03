@@ -39,6 +39,34 @@ function rethrowIfAborted(signal: AbortSignal, error: unknown): void {
   if (signal.aborted) throw error
 }
 
+/** The macOS chooser's dialog can be blocked before it ever opens (automation
+ * permission denied, headless session): cap the wait so a dead osascript
+ * surfaces a real error instead of hanging the pick forever. */
+const DARWIN_CHOOSER_TIMEOUT_MS = 60_000
+
+/** The stall timeout aborts the osascript child with Node's ABORT_ERR. */
+function isStalled(error: unknown): boolean {
+  return errorCode(error) === 'ABORT_ERR'
+}
+
+/** Combine the caller's abort with a hard stall timeout. Implemented with a
+ * local controller instead of AbortSignal.any: the composed signal is handed
+ * to execFile, and the composed abort must also fire when the timeout alone
+ * expires (AbortSignal.any semantics), without leaking a live timer into the
+ * caller's lifetime (the timeout is unref'd). */
+function darwinSignal(signal: AbortSignal): AbortSignal {
+  const controller = new AbortController()
+  if (signal.aborted) {
+    controller.abort(signal.reason)
+    return controller.signal
+  }
+  const onAbort = (): void => { controller.abort(signal.reason) }
+  signal.addEventListener('abort', onAbort, { once: true })
+  const timer = setTimeout(() => controller.abort(), DARWIN_CHOOSER_TIMEOUT_MS)
+  timer.unref?.()
+  return controller.signal
+}
+
 /**
  * Open the platform directory picker.
  * @param signal - caller/connection lifetime; abort terminates the native command.
@@ -53,15 +81,22 @@ export async function pickNativeDirectory(
   const run = internals.run ?? runNativeCommand
 
   if (platform === 'darwin') {
+    console.log('TRACE darwin signal.aborted =', signal.aborted)
     try {
+      const merged = darwinSignal(signal)
+      console.log('TRACE merged.aborted =', merged.aborted)
       const result = await run('osascript', [
         '-e', 'set selectedFolder to choose folder with prompt "Select Workspace Directory"',
         '-e', 'POSIX path of selectedFolder',
-      ], signal)
+      ], merged)
       return outputPath(result.stdout)
     } catch (error: unknown) {
       if (!signal.aborted && errorCode(error) === 1
         && /(?:User canceled|-128)/i.test(errorStderr(error))) return null
+      if (!signal.aborted && isStalled(error)) {
+        throw new Error('the macOS directory chooser did not respond (automation permission may be missing); '
+          + 'grant DeepSeek Harness access in System Settings > Privacy & Security > Automation, or use the browser GUI')
+      }
       throw error
     }
   }

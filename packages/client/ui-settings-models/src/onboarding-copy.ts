@@ -4,6 +4,12 @@ export const WELCOME_NOTICE_SETTINGS_NAMESPACE = 'ui-onboarding'
 /** Field storing the last welcome notice version the user acknowledged. */
 export const WELCOME_NOTICE_ACK_FIELD = 'welcomeNoticeVersion'
 
+/** Field recording that the user dismissed the official-DeepSeek key prompt. */
+export const DEEPSEEK_ONBOARDING_SKIP_FIELD = 'deepseekOfficialSkipped'
+
+/** The skip marker value (exact equality, like the welcome acknowledgement). */
+export const DEEPSEEK_ONBOARDING_SKIP_VALUE = '1'
+
 /**
  * Bump only when the notice changes materially and every user should see it
  * again. The acknowledgement is compared for exact equality.

@@ -6,7 +6,7 @@
  * the onboarding plugin's shared modal, so the key is entered once.
  */
 
-import { useEffect } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import type { IApiClient } from '@deepseek-ai/dsh-api-remotes/client'
 import type { SnapshotStore } from '@deepseek-ai/dsh-client-runtime/client'
@@ -17,6 +17,10 @@ import { ProviderEditor } from './ProviderEditor.tsx'
 import type { en } from './locales.ts'
 import { OnboardingModal } from './OnboardingModal.tsx'
 import styles from './DeepSeekOnboardingDialog.module.css'
+import {
+  DEEPSEEK_ONBOARDING_SKIP_FIELD, DEEPSEEK_ONBOARDING_SKIP_VALUE,
+  WELCOME_NOTICE_SETTINGS_NAMESPACE,
+} from '../onboarding-copy.ts'
 
 /** Registration-side dependencies of {@link DeepSeekOnboardingDialog}. */
 export interface DeepSeekOnboardingInjected {
@@ -51,6 +55,34 @@ export function DeepSeekOnboardingDialog(props: DeepSeekOnboardingDialogProps): 
   const { complete, controller, useModels, api, t } = props
   const state = useModels(snapshot => snapshot)
   const readiness = onboardingReadiness(state)
+  const [skipped, setSkipped] = useState<boolean | undefined>(undefined)
+
+  // Persist the dismissal and end the step either way: completing after a
+  // saved key is equally fine (readiness keeps the step closed thereafter).
+  const finish = useCallback((): void => {
+    void api.settings.mutate({
+      ns: WELCOME_NOTICE_SETTINGS_NAMESPACE,
+      ops: [{ op: 'set', path: [DEEPSEEK_ONBOARDING_SKIP_FIELD], value: DEEPSEEK_ONBOARDING_SKIP_VALUE }],
+    }).then(() => complete()).catch(() => complete())
+  }, [api, complete])
+
+  // Dismissal is durable (ui-onboarding settings): a user who skipped once is
+  // never blocked by this modal again, not even after a reload or restart.
+  // The memory-only step-completion ledger in the settings shell resets with
+  // the page, which is why persistence lives here, at the step itself.
+  useEffect(() => {
+    let alive = true
+    void api.settings.describe({}).then((response) => {
+      if (!response.result.ok || !alive) return
+      const ns = response.result.value.namespaces.find(candidate => candidate.ns === WELCOME_NOTICE_SETTINGS_NAMESPACE)
+      const value = ns?.value as Record<string, unknown> | undefined
+      if (value?.[DEEPSEEK_ONBOARDING_SKIP_FIELD] === DEEPSEEK_ONBOARDING_SKIP_VALUE) {
+        setSkipped(true)
+        complete()
+      }
+    }).catch(() => {})
+    return () => { alive = false }
+  }, [api, complete])
 
   useEffect(() => {
     if (state.status === 'idle') void controller.load()
@@ -61,8 +93,10 @@ export function DeepSeekOnboardingDialog(props: DeepSeekOnboardingDialogProps): 
       readiness.kind === 'adapter-absent'
       || readiness.kind === 'provider-ready'
       || readiness.kind === 'unavailable'
-    ) complete()
-  }, [complete, readiness.kind])
+    ) finish()
+  }, [finish, readiness.kind])
+
+  if (skipped === true) return null
 
   switch (readiness.kind) {
     case 'loading':
@@ -87,7 +121,7 @@ export function DeepSeekOnboardingDialog(props: DeepSeekOnboardingDialogProps): 
 
   const finishCredential = (changed: boolean): void => {
     if (!changed) {
-      complete()
+      finish()
       return
     }
     void controller.load()

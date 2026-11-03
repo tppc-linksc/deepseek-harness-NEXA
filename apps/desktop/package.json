@@ -1,0 +1,24 @@
+{
+  "name": "@deepseek-ai/dsh-desktop",
+  "description": "macOS desktop shell for the dsh web GUI — Plan A thin wrapper: spawns the dsh web host and opens it in an Electron window",
+  "version": "0.1.0-rc.5",
+  "private": true,
+  "type": "module",
+  "main": "lib/main.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "npm run build && electron .",
+    "smoke": "npm run build && DSH_DESKTOP_SMOKE=1 DSH_DESKTOP_HOST=\"node scripts/fake-host.mjs\" DSH_DESKTOP_CWD=\".\" electron .",
+    "make-icon": "node scripts/make-icon.mjs",
+    "pack:dir": "npm run build && node scripts/package-host.mjs && electron-builder --dir && node scripts/finish-app.mjs",
+    "pack": "npm run build && node scripts/package-host.mjs && electron-builder --dir && node scripts/finish-app.mjs --dmg"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "electron": "40.9.3",
+    "electron-builder": "^26.15.3",
+    "sharp": "^0.35.3",
+    "typescript": "^6.0.3"
+  }
+}

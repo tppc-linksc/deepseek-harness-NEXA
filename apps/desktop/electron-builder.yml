@@ -1,0 +1,32 @@
+# electron-builder config for the dsh-desktop thin shell (Plan A).
+# The app is a window over the bundled dsh web host; the harness itself ships
+# as extraResources (host/) and is never packaged into the asar.
+appId: ai.deepseek.dsh-desktop
+productName: DeepSeek Harness
+directories:
+  output: dist
+  buildResources: build
+files:
+  - lib/**/*
+  - preload.cjs
+  - package.json
+# The host tree is NOT listed here: electron-builder always excludes
+# **/node_modules/** from its file matchers, so the shell injects the complete
+# host (with a flattened node_modules) via scripts/finish-app.mjs after the
+# .app is packed.
+mac:
+  category: public.app-category.developer-tools
+  icon: build/icon.icns
+  target:
+    - target: dmg
+      arch:
+        - arm64
+    - target: zip
+      arch:
+        - arm64
+  # No signing identity by default (local builds); set CSC_LINK + CSC_KEY_PASSWORD
+  # (or mac.identity) to produce a notarizable Developer ID build.
+  identity: null
+dmg:
+  title: DeepSeek Harness ${version}
+  artifactName: dsh-desktop-${version}-${arch}.${ext}

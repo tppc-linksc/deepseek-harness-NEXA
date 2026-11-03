@@ -149,6 +149,23 @@ describe('directory-picker-native client half', () => {
     expect(b.pickDirectory).toHaveBeenCalledOnce()
   })
 
+  it('prefers the Electron shell dialog over host.pickDirectory when the preload exposes one', async () => {
+    const b = await bench()
+    b.declare()
+    await b.ctx.plugin({ inject: [...inject], apply }).await()
+    const entry = b.slots.entries(HOLES[0])[0]!
+    const injected = (entry.inject as () => { pick: () => Promise<string | null> })()
+    const desktopPick = vi.fn(async (): Promise<string | null> => '/electron/picked')
+    ;(globalThis as { dshDesktop?: unknown }).dshDesktop = { pickDirectory: desktopPick }
+    try {
+      await expect(injected.pick()).resolves.toBe('/electron/picked')
+      expect(desktopPick).toHaveBeenCalledOnce()
+      expect(b.pickDirectory).not.toHaveBeenCalled()
+    } finally {
+      delete (globalThis as { dshDesktop?: unknown }).dshDesktop
+    }
+  })
+
   it('runs one pick per open edge and reports the path to the latest onPicked', async () => {
     let resolve!: (path: string | null) => void
     const pick = vi.fn(() => new Promise<string | null>((settle) => { resolve = settle }))
